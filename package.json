@@ -1,0 +1,12 @@
+{
+  "name": "shared-shopping-list",
+  "version": "1.0.0",
+  "description": "A real-time shared shopping list web application",
+  "scripts": {
+    "start": "cd server && node index.js",
+    "build": "cd client && npm run build",
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev"
+  }
+}
