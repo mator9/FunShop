@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Backend for shared shopping list app",
   "main": "index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js"
@@ -11,7 +14,6 @@
     "better-sqlite3": "^11.7.0",
     "cors": "^2.8.5",
     "express": "^4.21.0",
-    "nanoid": "^5.0.9",
     "socket.io": "^4.8.0"
   }
 }

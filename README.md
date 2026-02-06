@@ -2,16 +2,42 @@
 
 A real-time collaborative shopping list web application. Create shopping lists, share them with family and friends, and work on them together in real-time.
 
+## Deploy to the Web (Free)
+
+The easiest way to get this running on the web for free is with **Render.com**:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mator9/FunShop)
+
+### Manual Render Setup
+
+If the button above doesn't work, you can deploy manually in a few steps:
+
+1. **Sign up** at [render.com](https://render.com) using your GitHub account (free)
+2. Click **"New"** > **"Web Service"**
+3. Connect your GitHub repository (`mator9/FunShop`)
+4. Configure the service:
+   - **Name**: `shared-shopping-list` (or anything you like)
+   - **Branch**: `cursor/shared-shopping-list-app-94f1`
+   - **Runtime**: Node
+   - **Build Command**: `cd client && npm install && npm run build && cd ../server && npm install`
+   - **Start Command**: `cd server && node index.js`
+   - **Instance Type**: Free
+5. Click **"Create Web Service"**
+6. Wait 2-3 minutes for it to build and deploy
+7. Your app will be live at `https://your-service-name.onrender.com`
+
+> **Note**: On the free tier, the service sleeps after 15 minutes of inactivity. The first request after sleeping takes ~30 seconds to wake up. Data persists while the service is running but may be reset on redeploy.
+
 ## Features
 
-- **Create shopping lists** - Start a new list with a name
-- **Share with others** - Share via a unique code or direct link
-- **Real-time collaboration** - Changes sync instantly across all connected users via WebSockets
-- **Mark items as found** - Check off items as you find them in the store
-- **Item categories** - Organize items by category (Produce, Dairy, Meat, etc.)
-- **Progress tracking** - See how many items have been found at a glance
-- **User identity** - See who added items and who found them
-- **Edit in place** - Double-click items to rename them; click list title to edit
+- **Create shopping lists** — Start a new list with a name
+- **Share with others** — Share via a unique code or direct link
+- **Real-time collaboration** — Changes sync instantly across all connected users via WebSockets
+- **Mark items as found** — Check off items as you find them in the store
+- **Item categories** — Organize items by category (Produce, Dairy, Meat, etc.)
+- **Progress tracking** — See how many items have been found at a glance
+- **User identity** — See who added items and who found them
+- **Edit in place** — Double-click items to rename them; click list title to edit
 
 ## Tech Stack
 
@@ -21,7 +47,7 @@ A real-time collaborative shopping list web application. Create shopping lists, 
 - **Real-time**: Socket.io
 - **Styling**: Custom CSS with modern design
 
-## Getting Started
+## Running Locally
 
 ### Prerequisites
 
@@ -62,10 +88,10 @@ The Vite dev server runs at `http://localhost:5173` and proxies API requests to 
 
 ## Usage
 
-1. **Create a list** - Enter a name on the home page and click "Create List"
-2. **Add items** - Type an item name and click "Add". Expand for quantity and category options
-3. **Share** - Click the "Share" button to get a share code or link
-4. **Join a list** - Enter a share code on the home page, or open the share link directly
-5. **Mark items found** - Click the checkbox next to an item when you find it
-6. **Edit items** - Double-click an item name to edit it
-7. **Delete items** - Hover over an item and click the X button
+1. **Create a list** — Enter a name on the home page and click "Create List"
+2. **Add items** — Type an item name and click "Add". Expand for quantity and category options
+3. **Share** — Click the "Share" button to get a share code or link
+4. **Join a list** — Enter a share code on the home page, or open the share link directly
+5. **Mark items found** — Click the checkbox next to an item when you find it
+6. **Edit items** — Double-click an item name to edit it
+7. **Delete items** — Hover over an item and click the X button

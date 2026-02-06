@@ -3,8 +3,12 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
-const { nanoid } = require('nanoid');
+const crypto = require('crypto');
 const db = require('./database');
+
+function generateId(length = 12) {
+  return crypto.randomBytes(length).toString('base64url').slice(0, length);
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -38,8 +42,8 @@ app.post('/api/lists', async (req, res) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'List name is required' });
     }
-    const id = nanoid(12);
-    const shareCode = nanoid(8);
+    const id = generateId(12);
+    const shareCode = generateId(8);
     const list = db.createList(id, name.trim(), shareCode);
     res.status(201).json(list);
   } catch (err) {
@@ -120,7 +124,7 @@ app.post('/api/lists/:listId/items', async (req, res) => {
     if (!list) {
       return res.status(404).json({ error: 'List not found' });
     }
-    const id = nanoid(12);
+    const id = generateId(12);
     const item = db.addItem(id, req.params.listId, name.trim(), quantity, category, addedBy);
     io.to(req.params.listId).emit('item:added', item);
     res.status(201).json(item);
@@ -187,7 +191,8 @@ io.on('connection', (socket) => {
   });
 });
 
-// Start server
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// Start server — bind to 0.0.0.0 for cloud deployment
+const HOST = process.env.HOST || '0.0.0.0';
+server.listen(PORT, HOST, () => {
+  console.log(`Server running on http://${HOST}:${PORT}`);
 });
