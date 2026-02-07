@@ -54,6 +54,13 @@ export function updateItem(id, updates) {
   });
 }
 
+export function reorderItems(listId, itemIds) {
+  return request(`/lists/${listId}/items/reorder`, {
+    method: 'PATCH',
+    body: JSON.stringify({ itemIds }),
+  });
+}
+
 export function deleteItem(id) {
   return request(`/items/${id}`, { method: 'DELETE' });
 }

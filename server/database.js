@@ -41,6 +41,7 @@ async function initializeDb() {
       is_found INTEGER DEFAULT 0,
       found_by TEXT DEFAULT '',
       added_by TEXT DEFAULT 'Anonymous',
+      sort_order INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE
@@ -94,9 +95,15 @@ async function deleteList(id) {
 
 // Item operations
 async function addItem(id, listId, name, quantity, category, addedBy) {
+  // Get the current max sort_order for this list, so new items go to the end
+  const maxResult = await client.execute({
+    sql: 'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM items WHERE list_id = ?',
+    args: [listId],
+  });
+  const nextOrder = (maxResult.rows[0]?.max_order ?? -1) + 1;
   await client.execute({
-    sql: 'INSERT INTO items (id, list_id, name, quantity, category, added_by) VALUES (?, ?, ?, ?, ?, ?)',
-    args: [id, listId, name, quantity || '1', category || '', addedBy || 'Anonymous'],
+    sql: 'INSERT INTO items (id, list_id, name, quantity, category, added_by, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    args: [id, listId, name, quantity || '1', category || '', addedBy || 'Anonymous', nextOrder],
   });
   await updateListTimestamp(listId);
   return getItemById(id);
@@ -112,10 +119,21 @@ async function getItemById(id) {
 
 async function getItemsByListId(listId) {
   const result = await client.execute({
-    sql: 'SELECT * FROM items WHERE list_id = ? ORDER BY is_found ASC, created_at ASC',
+    sql: 'SELECT * FROM items WHERE list_id = ? ORDER BY sort_order ASC',
     args: [listId],
   });
   return result.rows;
+}
+
+async function reorderItems(listId, itemIds) {
+  // Update sort_order for each item based on its position in the array
+  const statements = itemIds.map((itemId, index) => ({
+    sql: 'UPDATE items SET sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND list_id = ?',
+    args: [index, itemId, listId],
+  }));
+  await client.batch(statements, 'write');
+  await updateListTimestamp(listId);
+  return getItemsByListId(listId);
 }
 
 async function updateItem(id, updates) {
@@ -172,6 +190,7 @@ module.exports = {
   addItem,
   getItemById,
   getItemsByListId,
+  reorderItems,
   updateItem,
   deleteItem,
 };
