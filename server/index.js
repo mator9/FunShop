@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '16kb' }));
 
 // Serve static files from the React build
 app.use(express.static(path.join(__dirname, '../client/dist')));
@@ -134,10 +134,11 @@ app.post('/api/lists/:listId/items', async (req, res) => {
   }
 });
 
-// Update an item
+// Update an item (whitelist allowed fields)
 app.patch('/api/items/:id', async (req, res) => {
   try {
-    const item = db.updateItem(req.params.id, req.body);
+    const { name, quantity, category, is_found, found_by } = req.body;
+    const item = db.updateItem(req.params.id, { name, quantity, category, is_found, found_by });
     if (!item) {
       return res.status(404).json({ error: 'Item not found' });
     }

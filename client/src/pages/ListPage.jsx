@@ -134,8 +134,12 @@ export default function ListPage() {
   };
 
   const handleSaveName = async () => {
-    if (newName.trim() && newName.trim() !== list.name) {
-      await updateListName(id, newName.trim());
+    try {
+      if (newName.trim() && newName.trim() !== list.name) {
+        await updateListName(id, newName.trim());
+      }
+    } catch (err) {
+      console.error('Failed to update list name:', err);
     }
     setEditingName(false);
   };

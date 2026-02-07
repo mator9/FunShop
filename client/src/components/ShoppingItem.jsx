@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
 
+const CATEGORY_COLORS = {
+  'Produce': '#22c55e',
+  'Dairy': '#3b82f6',
+  'Meat': '#ef4444',
+  'Bakery': '#f59e0b',
+  'Frozen': '#06b6d4',
+  'Beverages': '#8b5cf6',
+  'Snacks': '#f97316',
+  'Canned Goods': '#64748b',
+  'Household': '#ec4899',
+  'Personal Care': '#14b8a6',
+  'Other': '#6b7280',
+};
+
 export default function ShoppingItem({ item, onToggle, onDelete, onUpdate }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
@@ -9,20 +23,6 @@ export default function ShoppingItem({ item, onToggle, onDelete, onUpdate }) {
       onUpdate({ name: editName.trim() });
     }
     setEditing(false);
-  };
-
-  const categoryColors = {
-    'Produce': '#22c55e',
-    'Dairy': '#3b82f6',
-    'Meat': '#ef4444',
-    'Bakery': '#f59e0b',
-    'Frozen': '#06b6d4',
-    'Beverages': '#8b5cf6',
-    'Snacks': '#f97316',
-    'Canned Goods': '#64748b',
-    'Household': '#ec4899',
-    'Personal Care': '#14b8a6',
-    'Other': '#6b7280',
   };
 
   return (
@@ -63,7 +63,7 @@ export default function ShoppingItem({ item, onToggle, onDelete, onUpdate }) {
               {item.category && (
                 <span
                   className="item-category"
-                  style={{ backgroundColor: `${categoryColors[item.category] || '#6b7280'}20`, color: categoryColors[item.category] || '#6b7280' }}
+                  style={{ backgroundColor: `${CATEGORY_COLORS[item.category] || '#6b7280'}20`, color: CATEGORY_COLORS[item.category] || '#6b7280' }}
                 >
                   {item.category}
                 </span>
