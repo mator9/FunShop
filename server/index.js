@@ -22,9 +22,6 @@ app.use(express.json({ limit: '16kb' }));
 // Serve static files from the React build
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
-// Initialize the database
-db.getDb();
-
 // Socket.io setup
 const io = new Server(server, {
   cors: {
@@ -44,7 +41,7 @@ app.post('/api/lists', async (req, res) => {
     }
     const id = generateId(12);
     const shareCode = generateId(8);
-    const list = db.createList(id, name.trim(), shareCode);
+    const list = await db.createList(id, name.trim(), shareCode);
     res.status(201).json(list);
   } catch (err) {
     console.error('Error creating list:', err);
@@ -55,11 +52,11 @@ app.post('/api/lists', async (req, res) => {
 // Get a list by ID
 app.get('/api/lists/:id', async (req, res) => {
   try {
-    const list = db.getListById(req.params.id);
+    const list = await db.getListById(req.params.id);
     if (!list) {
       return res.status(404).json({ error: 'List not found' });
     }
-    const items = db.getItemsByListId(list.id);
+    const items = await db.getItemsByListId(list.id);
     res.json({ ...list, items });
   } catch (err) {
     console.error('Error fetching list:', err);
@@ -70,11 +67,11 @@ app.get('/api/lists/:id', async (req, res) => {
 // Get a list by share code
 app.get('/api/lists/share/:shareCode', async (req, res) => {
   try {
-    const list = db.getListByShareCode(req.params.shareCode);
+    const list = await db.getListByShareCode(req.params.shareCode);
     if (!list) {
       return res.status(404).json({ error: 'List not found' });
     }
-    const items = db.getItemsByListId(list.id);
+    const items = await db.getItemsByListId(list.id);
     res.json({ ...list, items });
   } catch (err) {
     console.error('Error fetching list:', err);
@@ -89,7 +86,7 @@ app.patch('/api/lists/:id', async (req, res) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'List name is required' });
     }
-    const list = db.updateListName(req.params.id, name.trim());
+    const list = await db.updateListName(req.params.id, name.trim());
     if (!list) {
       return res.status(404).json({ error: 'List not found' });
     }
@@ -104,7 +101,7 @@ app.patch('/api/lists/:id', async (req, res) => {
 // Delete a list
 app.delete('/api/lists/:id', async (req, res) => {
   try {
-    db.deleteList(req.params.id);
+    await db.deleteList(req.params.id);
     io.to(req.params.id).emit('list:deleted');
     res.json({ success: true });
   } catch (err) {
@@ -120,12 +117,12 @@ app.post('/api/lists/:listId/items', async (req, res) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Item name is required' });
     }
-    const list = db.getListById(req.params.listId);
+    const list = await db.getListById(req.params.listId);
     if (!list) {
       return res.status(404).json({ error: 'List not found' });
     }
     const id = generateId(12);
-    const item = db.addItem(id, req.params.listId, name.trim(), quantity, category, addedBy);
+    const item = await db.addItem(id, req.params.listId, name.trim(), quantity, category, addedBy);
     io.to(req.params.listId).emit('item:added', item);
     res.status(201).json(item);
   } catch (err) {
@@ -138,7 +135,7 @@ app.post('/api/lists/:listId/items', async (req, res) => {
 app.patch('/api/items/:id', async (req, res) => {
   try {
     const { name, quantity, category, is_found, found_by } = req.body;
-    const item = db.updateItem(req.params.id, { name, quantity, category, is_found, found_by });
+    const item = await db.updateItem(req.params.id, { name, quantity, category, is_found, found_by });
     if (!item) {
       return res.status(404).json({ error: 'Item not found' });
     }
@@ -153,7 +150,7 @@ app.patch('/api/items/:id', async (req, res) => {
 // Delete an item
 app.delete('/api/items/:id', async (req, res) => {
   try {
-    const item = db.deleteItem(req.params.id);
+    const item = await db.deleteItem(req.params.id);
     if (!item) {
       return res.status(404).json({ error: 'Item not found' });
     }
@@ -192,8 +189,21 @@ io.on('connection', (socket) => {
   });
 });
 
-// Start server — bind to 0.0.0.0 for cloud deployment
-const HOST = process.env.HOST || '0.0.0.0';
-server.listen(PORT, HOST, () => {
-  console.log(`Server running on http://${HOST}:${PORT}`);
+// ============ Startup ============
+
+async function start() {
+  // Initialize the database (creates tables if they don't exist)
+  await db.getDb();
+  console.log('Database initialized');
+
+  // Start server — bind to 0.0.0.0 for cloud deployment
+  const HOST = process.env.HOST || '0.0.0.0';
+  server.listen(PORT, HOST, () => {
+    console.log(`Server running on http://${HOST}:${PORT}`);
+  });
+}
+
+start().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });
