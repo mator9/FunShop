@@ -8,7 +8,35 @@ The easiest way to get this running on the web for free is with **Render.com**:
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mator9/FunShop)
 
-### Manual Render Setup
+### Step 1: Set Up a Free Turso Database
+
+The app uses [Turso](https://turso.tech) for persistent data storage (free tier: 9 GB storage, 500M rows read/month). This ensures your data survives Render restarts and redeployments.
+
+1. **Sign up** at [turso.tech](https://turso.tech) (free, no credit card required)
+2. Install the Turso CLI:
+   ```bash
+   # macOS / Linux
+   curl -sSfL https://get.tur.so/install.sh | bash
+   ```
+3. Log in and create a database:
+   ```bash
+   turso auth login
+   turso db create shopping-list
+   ```
+4. Get your database URL and auth token:
+   ```bash
+   turso db show shopping-list --url
+   turso db tokens create shopping-list
+   ```
+   Save both values — you'll need them for the Render setup below.
+
+### Step 2: Deploy to Render
+
+#### One-click deploy
+
+Use the Deploy button at the top of this section. When prompted, fill in the `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` environment variables with the values from Step 1.
+
+#### Manual Render Setup
 
 If the button above doesn't work, you can deploy manually in a few steps:
 
@@ -17,16 +45,19 @@ If the button above doesn't work, you can deploy manually in a few steps:
 3. Connect your GitHub repository (`mator9/FunShop`)
 4. Configure the service:
    - **Name**: `shared-shopping-list` (or anything you like)
-   - **Branch**: `cursor/shared-shopping-list-app-94f1`
+   - **Branch**: `main`
    - **Runtime**: Node
    - **Build Command**: `cd client && npm install && npm run build && cd ../server && npm install`
    - **Start Command**: `cd server && node index.js`
    - **Instance Type**: Free
-5. Click **"Create Web Service"**
-6. Wait 2-3 minutes for it to build and deploy
-7. Your app will be live at `https://your-service-name.onrender.com`
+5. Add environment variables (under **Environment**):
+   - `TURSO_DATABASE_URL` — your Turso database URL (e.g. `libsql://shopping-list-yourname.turso.io`)
+   - `TURSO_AUTH_TOKEN` — your Turso auth token
+6. Click **"Create Web Service"**
+7. Wait 2-3 minutes for it to build and deploy
+8. Your app will be live at `https://your-service-name.onrender.com`
 
-> **Note**: On the free tier, the service sleeps after 15 minutes of inactivity. The first request after sleeping takes ~30 seconds to wake up. Data persists while the service is running but may be reset on redeploy.
+> **Note**: On the free tier, the service sleeps after 15 minutes of inactivity. The first request after sleeping takes ~30 seconds to wake up. Your data is stored in Turso's cloud database and persists across restarts, redeployments, and sleep cycles.
 
 ## Features
 
@@ -43,7 +74,7 @@ If the button above doesn't work, you can deploy manually in a few steps:
 
 - **Frontend**: React 18, React Router, Vite
 - **Backend**: Node.js, Express
-- **Database**: SQLite (via better-sqlite3)
+- **Database**: SQLite-compatible cloud database via [Turso](https://turso.tech) (libSQL), with local SQLite fallback for development
 - **Real-time**: Socket.io
 - **Styling**: Custom CSS with modern design
 
@@ -70,7 +101,7 @@ npm run build
 npm start
 ```
 
-The app will be available at `http://localhost:3001`.
+The app will be available at `http://localhost:3001`. When run without `TURSO_DATABASE_URL`, it automatically uses a local SQLite file (`server/shopping_lists.db`), so no external database setup is needed for local development.
 
 ### Development
 
@@ -85,6 +116,14 @@ npm run dev:client
 ```
 
 The Vite dev server runs at `http://localhost:5173` and proxies API requests to the backend.
+
+To use your Turso cloud database locally (optional):
+
+```bash
+export TURSO_DATABASE_URL="libsql://your-db.turso.io"
+export TURSO_AUTH_TOKEN="your-token"
+npm run dev:server
+```
 
 ## Usage
 

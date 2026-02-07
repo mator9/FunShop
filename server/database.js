@@ -1,31 +1,33 @@
-const Database = require('better-sqlite3');
+const { createClient } = require('@libsql/client');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'shopping_lists.db');
+let client;
 
-let db;
-
-function getDb() {
-  if (!db) {
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    initializeDb();
+async function getDb() {
+  if (!client) {
+    // Use Turso cloud database in production, local SQLite file for development
+    const url = process.env.TURSO_DATABASE_URL || `file:${path.join(__dirname, 'shopping_lists.db')}`;
+    client = createClient({
+      url,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+    await initializeDb();
   }
-  return db;
+  return client;
 }
 
-function initializeDb() {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS lists (
+async function initializeDb() {
+  await client.execute('PRAGMA foreign_keys = ON');
+
+  await client.batch([
+    `CREATE TABLE IF NOT EXISTS lists (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       share_code TEXT UNIQUE NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS items (
+    )`,
+    `CREATE TABLE IF NOT EXISTS items (
       id TEXT PRIMARY KEY,
       list_id TEXT NOT NULL,
       name TEXT NOT NULL,
@@ -37,63 +39,81 @@ function initializeDb() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_items_list_id ON items(list_id);
-    CREATE INDEX IF NOT EXISTS idx_lists_share_code ON lists(share_code);
-  `);
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_items_list_id ON items(list_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_lists_share_code ON lists(share_code)`,
+  ], 'write');
 }
 
 // List operations
-function createList(id, name, shareCode) {
-  const stmt = db.prepare('INSERT INTO lists (id, name, share_code) VALUES (?, ?, ?)');
-  stmt.run(id, name, shareCode);
+async function createList(id, name, shareCode) {
+  await client.execute({
+    sql: 'INSERT INTO lists (id, name, share_code) VALUES (?, ?, ?)',
+    args: [id, name, shareCode],
+  });
   return getListById(id);
 }
 
-function getListById(id) {
-  const stmt = db.prepare('SELECT * FROM lists WHERE id = ?');
-  return stmt.get(id);
+async function getListById(id) {
+  const result = await client.execute({
+    sql: 'SELECT * FROM lists WHERE id = ?',
+    args: [id],
+  });
+  return result.rows[0] || null;
 }
 
-function getListByShareCode(shareCode) {
-  const stmt = db.prepare('SELECT * FROM lists WHERE share_code = ?');
-  return stmt.get(shareCode);
+async function getListByShareCode(shareCode) {
+  const result = await client.execute({
+    sql: 'SELECT * FROM lists WHERE share_code = ?',
+    args: [shareCode],
+  });
+  return result.rows[0] || null;
 }
 
-function updateListName(id, name) {
-  const stmt = db.prepare('UPDATE lists SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-  stmt.run(name, id);
+async function updateListName(id, name) {
+  await client.execute({
+    sql: 'UPDATE lists SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    args: [name, id],
+  });
   return getListById(id);
 }
 
-function deleteList(id) {
-  const stmt = db.prepare('DELETE FROM lists WHERE id = ?');
-  return stmt.run(id);
+async function deleteList(id) {
+  const result = await client.execute({
+    sql: 'DELETE FROM lists WHERE id = ?',
+    args: [id],
+  });
+  return result;
 }
 
 // Item operations
-function addItem(id, listId, name, quantity, category, addedBy) {
-  const stmt = db.prepare(
-    'INSERT INTO items (id, list_id, name, quantity, category, added_by) VALUES (?, ?, ?, ?, ?, ?)'
-  );
-  stmt.run(id, listId, name, quantity || '1', category || '', addedBy || 'Anonymous');
-  updateListTimestamp(listId);
+async function addItem(id, listId, name, quantity, category, addedBy) {
+  await client.execute({
+    sql: 'INSERT INTO items (id, list_id, name, quantity, category, added_by) VALUES (?, ?, ?, ?, ?, ?)',
+    args: [id, listId, name, quantity || '1', category || '', addedBy || 'Anonymous'],
+  });
+  await updateListTimestamp(listId);
   return getItemById(id);
 }
 
-function getItemById(id) {
-  const stmt = db.prepare('SELECT * FROM items WHERE id = ?');
-  return stmt.get(id);
+async function getItemById(id) {
+  const result = await client.execute({
+    sql: 'SELECT * FROM items WHERE id = ?',
+    args: [id],
+  });
+  return result.rows[0] || null;
 }
 
-function getItemsByListId(listId) {
-  const stmt = db.prepare('SELECT * FROM items WHERE list_id = ? ORDER BY is_found ASC, created_at ASC');
-  return stmt.all(listId);
+async function getItemsByListId(listId) {
+  const result = await client.execute({
+    sql: 'SELECT * FROM items WHERE list_id = ? ORDER BY is_found ASC, created_at ASC',
+    args: [listId],
+  });
+  return result.rows;
 }
 
-function updateItem(id, updates) {
-  const item = getItemById(id);
+async function updateItem(id, updates) {
+  const item = await getItemById(id);
   if (!item) return null;
 
   const fields = [];
@@ -110,24 +130,30 @@ function updateItem(id, updates) {
   fields.push('updated_at = CURRENT_TIMESTAMP');
   values.push(id);
 
-  const stmt = db.prepare(`UPDATE items SET ${fields.join(', ')} WHERE id = ?`);
-  stmt.run(...values);
-  updateListTimestamp(item.list_id);
+  await client.execute({
+    sql: `UPDATE items SET ${fields.join(', ')} WHERE id = ?`,
+    args: values,
+  });
+  await updateListTimestamp(item.list_id);
   return getItemById(id);
 }
 
-function deleteItem(id) {
-  const item = getItemById(id);
+async function deleteItem(id) {
+  const item = await getItemById(id);
   if (!item) return null;
-  const stmt = db.prepare('DELETE FROM items WHERE id = ?');
-  stmt.run(id);
-  updateListTimestamp(item.list_id);
+  await client.execute({
+    sql: 'DELETE FROM items WHERE id = ?',
+    args: [id],
+  });
+  await updateListTimestamp(item.list_id);
   return item;
 }
 
-function updateListTimestamp(listId) {
-  const stmt = db.prepare('UPDATE lists SET updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-  stmt.run(listId);
+async function updateListTimestamp(listId) {
+  await client.execute({
+    sql: 'UPDATE lists SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    args: [listId],
+  });
 }
 
 module.exports = {
