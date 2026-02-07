@@ -2,23 +2,28 @@ const { createClient } = require('@libsql/client');
 const path = require('path');
 
 let client;
+let initPromise;
 
 async function getDb() {
-  if (!client) {
-    // Use Turso cloud database in production, local SQLite file for development
-    const url = process.env.TURSO_DATABASE_URL || `file:${path.join(__dirname, 'shopping_lists.db')}`;
-    client = createClient({
-      url,
-      authToken: process.env.TURSO_AUTH_TOKEN,
-    });
-    await initializeDb();
+  if (!initPromise) {
+    initPromise = (async () => {
+      // Use Turso cloud database in production, local SQLite file for development
+      const url = process.env.TURSO_DATABASE_URL || `file:${path.join(__dirname, 'shopping_lists.db')}`;
+      client = createClient({
+        url,
+        authToken: process.env.TURSO_AUTH_TOKEN,
+      });
+      await initializeDb();
+    })();
   }
+  await initPromise;
   return client;
 }
 
 async function initializeDb() {
-  await client.execute('PRAGMA foreign_keys = ON');
-
+  // Note: PRAGMA foreign_keys = ON is session-scoped and does NOT persist
+  // across Turso HTTP requests, so ON DELETE CASCADE cannot be relied upon.
+  // Cascading deletes are handled explicitly in deleteList() instead.
   await client.batch([
     `CREATE TABLE IF NOT EXISTS lists (
       id TEXT PRIMARY KEY,
@@ -79,11 +84,12 @@ async function updateListName(id, name) {
 }
 
 async function deleteList(id) {
-  const result = await client.execute({
-    sql: 'DELETE FROM lists WHERE id = ?',
-    args: [id],
-  });
-  return result;
+  // Explicitly delete items first because PRAGMA foreign_keys = ON
+  // does not persist across Turso HTTP requests (ON DELETE CASCADE won't fire).
+  await client.batch([
+    { sql: 'DELETE FROM items WHERE list_id = ?', args: [id] },
+    { sql: 'DELETE FROM lists WHERE id = ?', args: [id] },
+  ], 'write');
 }
 
 // Item operations
