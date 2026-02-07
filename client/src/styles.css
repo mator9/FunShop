@@ -6,9 +6,9 @@
 }
 
 :root {
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-light: #eef2ff;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
   --success: #22c55e;
   --success-light: #f0fdf4;
   --danger: #ef4444;
