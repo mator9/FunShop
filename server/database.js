@@ -49,6 +49,48 @@ async function initializeDb() {
     `CREATE INDEX IF NOT EXISTS idx_items_list_id ON items(list_id)`,
     `CREATE INDEX IF NOT EXISTS idx_lists_share_code ON lists(share_code)`,
   ], 'write');
+
+  // Migrate existing databases: add sort_order column if it doesn't exist.
+  // CREATE TABLE IF NOT EXISTS won't alter an existing table, so we need
+  // an explicit ALTER TABLE for databases created before this feature.
+  await migrateAddSortOrder();
+}
+
+async function migrateAddSortOrder() {
+  try {
+    // Check if column already exists by querying table info
+    const tableInfo = await client.execute("PRAGMA table_info(items)");
+    const hasSortOrder = tableInfo.rows.some((row) => row.name === 'sort_order');
+    if (hasSortOrder) return;
+
+    // Add the column and backfill existing items with order based on created_at
+    await client.execute('ALTER TABLE items ADD COLUMN sort_order INTEGER DEFAULT 0');
+
+    // Backfill sort_order for existing items, ordered by created_at within each list
+    const lists = await client.execute('SELECT DISTINCT list_id FROM items');
+    for (const row of lists.rows) {
+      const listItems = await client.execute({
+        sql: 'SELECT id FROM items WHERE list_id = ? ORDER BY created_at ASC',
+        args: [row.list_id],
+      });
+      const updates = listItems.rows.map((item, index) => ({
+        sql: 'UPDATE items SET sort_order = ? WHERE id = ?',
+        args: [index, item.id],
+      }));
+      if (updates.length > 0) {
+        await client.batch(updates, 'write');
+      }
+    }
+
+    console.log('Migration complete: added sort_order column to items table');
+  } catch (err) {
+    // If PRAGMA table_info is not supported (some Turso configurations),
+    // try the ALTER TABLE directly and ignore "duplicate column" errors
+    if (err.message && err.message.includes('duplicate column')) {
+      return; // Column already exists, nothing to do
+    }
+    console.error('Migration warning (sort_order):', err.message);
+  }
 }
 
 // List operations
@@ -100,7 +142,7 @@ async function addItem(id, listId, name, quantity, category, addedBy) {
     sql: 'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM items WHERE list_id = ?',
     args: [listId],
   });
-  const nextOrder = (maxResult.rows[0]?.max_order ?? -1) + 1;
+  const nextOrder = Number(maxResult.rows[0]?.max_order ?? -1) + 1;
   await client.execute({
     sql: 'INSERT INTO items (id, list_id, name, quantity, category, added_by, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
     args: [id, listId, name, quantity || '1', category || '', addedBy || 'Anonymous', nextOrder],

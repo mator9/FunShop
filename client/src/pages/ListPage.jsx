@@ -12,13 +12,13 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragOverlay,
 } from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+
 export default function ListPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -30,7 +30,6 @@ export default function ListPage() {
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState('');
   const [userName, setUserName] = useState('');
-  const [activeId, setActiveId] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -183,13 +182,8 @@ export default function ListPage() {
     }
   };
 
-  const handleDragStart = (event) => {
-    setActiveId(event.active.id);
-  };
-
   const handleDragEnd = async (event) => {
     const { active, over } = event;
-    setActiveId(null);
 
     if (!over || active.id === over.id) return;
 
@@ -197,10 +191,12 @@ export default function ListPage() {
     const activeItem = items.find((i) => i.id === active.id);
     if (!activeItem) return;
 
-    // Determine which sub-list we're working with
-    const isFoundSection = activeItem.is_found;
-    const sectionItems = items.filter((i) => Boolean(i.is_found) === isFoundSection);
-    const otherItems = items.filter((i) => Boolean(i.is_found) !== isFoundSection);
+    // Determine which sub-list we're working with.
+    // is_found comes from SQLite as an integer (0 or 1), so use !! to
+    // coerce to boolean before comparing to avoid strict-equality mismatches.
+    const isFoundSection = !!activeItem.is_found;
+    const sectionItems = items.filter((i) => !!i.is_found === isFoundSection);
+    const otherItems = items.filter((i) => !!i.is_found !== isFoundSection);
 
     const oldIndex = sectionItems.findIndex((i) => i.id === active.id);
     const newIndex = sectionItems.findIndex((i) => i.id === over.id);
@@ -228,10 +224,6 @@ export default function ListPage() {
       // Revert on failure
       fetchList();
     }
-  };
-
-  const handleDragCancel = () => {
-    setActiveId(null);
   };
 
   if (loading) {
@@ -357,9 +349,7 @@ export default function ListPage() {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
           >
             {pendingItems.length > 0 && (
               <div className="items-section">
