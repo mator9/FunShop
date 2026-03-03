@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
 
-const CATEGORIES = [
-  '', 'Produce', 'Dairy', 'Meat', 'Bakery', 'Frozen',
-  'Beverages', 'Snacks', 'Canned Goods', 'Household', 'Personal Care', 'Other'
-];
-
 export default function AddItemForm({ onAdd }) {
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('1');
-  const [category, setCategory] = useState('');
   const [expanded, setExpanded] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onAdd({ name: name.trim(), quantity, category });
+    onAdd({ name: name.trim(), quantity });
     setName('');
     setQuantity('1');
-    setCategory('');
   };
 
   return (
@@ -61,14 +54,6 @@ export default function AddItemForm({ onAdd }) {
               placeholder="1"
               maxLength={20}
             />
-          </div>
-          <div className="detail-field">
-            <label>Category</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)}>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c || 'None'}</option>
-              ))}
-            </select>
           </div>
         </div>
       )}

@@ -37,7 +37,6 @@ async function initializeDb() {
       list_id TEXT NOT NULL,
       name TEXT NOT NULL,
       quantity TEXT DEFAULT '1',
-      category TEXT DEFAULT '',
       is_found INTEGER DEFAULT 0,
       found_by TEXT DEFAULT '',
       added_by TEXT DEFAULT 'Anonymous',
@@ -136,7 +135,7 @@ async function deleteList(id) {
 }
 
 // Item operations
-async function addItem(id, listId, name, quantity, category, addedBy) {
+async function addItem(id, listId, name, quantity, addedBy) {
   // Get the current max sort_order for this list, so new items go to the end
   const maxResult = await client.execute({
     sql: 'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM items WHERE list_id = ?',
@@ -144,8 +143,8 @@ async function addItem(id, listId, name, quantity, category, addedBy) {
   });
   const nextOrder = Number(maxResult.rows[0]?.max_order ?? -1) + 1;
   await client.execute({
-    sql: 'INSERT INTO items (id, list_id, name, quantity, category, added_by, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    args: [id, listId, name, quantity || '1', category || '', addedBy || 'Anonymous', nextOrder],
+    sql: 'INSERT INTO items (id, list_id, name, quantity, added_by, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
+    args: [id, listId, name, quantity || '1', addedBy || 'Anonymous', nextOrder],
   });
   await updateListTimestamp(listId);
   return getItemById(id);
@@ -187,7 +186,6 @@ async function updateItem(id, updates) {
 
   if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
   if (updates.quantity !== undefined) { fields.push('quantity = ?'); values.push(updates.quantity); }
-  if (updates.category !== undefined) { fields.push('category = ?'); values.push(updates.category); }
   if (updates.is_found !== undefined) { fields.push('is_found = ?'); values.push(updates.is_found ? 1 : 0); }
   if (updates.found_by !== undefined) { fields.push('found_by = ?'); values.push(updates.found_by); }
 

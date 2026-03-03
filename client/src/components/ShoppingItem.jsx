@@ -2,20 +2,6 @@ import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const CATEGORY_COLORS = {
-  'Produce': '#22c55e',
-  'Dairy': '#3b82f6',
-  'Meat': '#ef4444',
-  'Bakery': '#f59e0b',
-  'Frozen': '#06b6d4',
-  'Beverages': '#8b5cf6',
-  'Snacks': '#f97316',
-  'Canned Goods': '#64748b',
-  'Household': '#ec4899',
-  'Personal Care': '#14b8a6',
-  'Other': '#6b7280',
-};
-
 export default function ShoppingItem({ item, onToggle, onDelete, onUpdate }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
@@ -97,14 +83,6 @@ export default function ShoppingItem({ item, onToggle, onDelete, onUpdate }) {
             <div className="item-meta">
               {item.quantity && item.quantity !== '1' && (
                 <span className="item-quantity">x{item.quantity}</span>
-              )}
-              {item.category && (
-                <span
-                  className="item-category"
-                  style={{ backgroundColor: `${CATEGORY_COLORS[item.category] || '#6b7280'}20`, color: CATEGORY_COLORS[item.category] || '#6b7280' }}
-                >
-                  {item.category}
-                </span>
               )}
               {!!item.is_found && item.found_by && (
                 <span className="item-found-by">found by {item.found_by}</span>

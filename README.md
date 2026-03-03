@@ -65,7 +65,6 @@ If the button above doesn't work, you can deploy manually in a few steps:
 - **Share with others** — Share via a unique code or direct link
 - **Real-time collaboration** — Changes sync instantly across all connected users via WebSockets
 - **Mark items as found** — Check off items as you find them in the store
-- **Item categories** — Organize items by category (Produce, Dairy, Meat, etc.)
 - **Progress tracking** — See how many items have been found at a glance
 - **User identity** — See who added items and who found them
 - **Edit in place** — Double-click items to rename them; click list title to edit
@@ -128,7 +127,7 @@ npm run dev:server
 ## Usage
 
 1. **Create a list** — Enter a name on the home page and click "Create List"
-2. **Add items** — Type an item name and click "Add". Expand for quantity and category options
+2. **Add items** — Type an item name and click "Add". Expand for quantity options
 3. **Share** — Click the "Share" button to get a share code or link
 4. **Join a list** — Enter a share code on the home page, or open the share link directly
 5. **Mark items found** — Click the checkbox next to an item when you find it
