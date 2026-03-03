@@ -1,10 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getList, addItem, updateItem, deleteItem, deleteList, updateListName } from '../api';
+import { getList, addItem, updateItem, deleteItem, deleteList, updateListName, reorderItems } from '../api';
 import { socket } from '../socket';
 import ShoppingItem from '../components/ShoppingItem';
 import ShareModal from '../components/ShareModal';
 import AddItemForm from '../components/AddItemForm';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 export default function ListPage() {
   const { id } = useParams();
@@ -17,6 +30,17 @@ export default function ListPage() {
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState('');
   const [userName, setUserName] = useState('');
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Load or prompt for username
   useEffect(() => {
@@ -68,6 +92,10 @@ export default function ListPage() {
       setItems((prev) => prev.filter((i) => i.id !== itemId));
     });
 
+    socket.on('items:reordered', (reorderedItems) => {
+      setItems(reorderedItems);
+    });
+
     socket.on('list:updated', (updatedList) => {
       setList(updatedList);
       setNewName(updatedList.name);
@@ -82,6 +110,7 @@ export default function ListPage() {
       socket.off('item:added');
       socket.off('item:updated');
       socket.off('item:deleted');
+      socket.off('items:reordered');
       socket.off('list:updated');
       socket.off('list:deleted');
     };
@@ -150,6 +179,50 @@ export default function ListPage() {
       const trimmed = name.trim();
       localStorage.setItem('shopping_list_username', trimmed);
       setUserName(trimmed);
+    }
+  };
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    // Work out which section was being dragged in
+    const activeItem = items.find((i) => i.id === active.id);
+    if (!activeItem) return;
+
+    // Determine which sub-list we're working with.
+    // is_found comes from SQLite as an integer (0 or 1), so use !! to
+    // coerce to boolean before comparing to avoid strict-equality mismatches.
+    const isFoundSection = !!activeItem.is_found;
+    const sectionItems = items.filter((i) => !!i.is_found === isFoundSection);
+    const otherItems = items.filter((i) => !!i.is_found !== isFoundSection);
+
+    const oldIndex = sectionItems.findIndex((i) => i.id === active.id);
+    const newIndex = sectionItems.findIndex((i) => i.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Reorder within the section
+    const reordered = [...sectionItems];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+
+    // Rebuild full items list: pending first, then found (preserving order)
+    const pendingSection = isFoundSection ? otherItems : reordered;
+    const foundSection = isFoundSection ? reordered : otherItems;
+    const newItems = [...pendingSection, ...foundSection];
+
+    // Optimistic update
+    setItems(newItems);
+
+    // Persist to server
+    try {
+      await reorderItems(id, newItems.map((i) => i.id));
+    } catch (err) {
+      console.error('Failed to reorder items:', err);
+      // Revert on failure
+      fetchList();
     }
   };
 
@@ -273,24 +346,33 @@ export default function ListPage() {
             <p>Add items above to get started</p>
           </div>
         ) : (
-          <>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
             {pendingItems.length > 0 && (
               <div className="items-section">
                 <h3 className="section-title">
                   <span className="section-badge pending-badge">{pendingItems.length}</span>
                   To Find
                 </h3>
-                <div className="items-list">
-                  {pendingItems.map((item) => (
-                    <ShoppingItem
-                      key={item.id}
-                      item={item}
-                      onToggle={() => handleToggleFound(item)}
-                      onDelete={() => handleDeleteItem(item.id)}
-                      onUpdate={(updates) => handleUpdateItem(item.id, updates)}
-                    />
-                  ))}
-                </div>
+                <SortableContext
+                  items={pendingItems.map((i) => i.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="items-list">
+                    {pendingItems.map((item) => (
+                      <ShoppingItem
+                        key={item.id}
+                        item={item}
+                        onToggle={() => handleToggleFound(item)}
+                        onDelete={() => handleDeleteItem(item.id)}
+                        onUpdate={(updates) => handleUpdateItem(item.id, updates)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
               </div>
             )}
 
@@ -300,20 +382,25 @@ export default function ListPage() {
                   <span className="section-badge found-badge">{foundItems.length}</span>
                   Found
                 </h3>
-                <div className="items-list found-list">
-                  {foundItems.map((item) => (
-                    <ShoppingItem
-                      key={item.id}
-                      item={item}
-                      onToggle={() => handleToggleFound(item)}
-                      onDelete={() => handleDeleteItem(item.id)}
-                      onUpdate={(updates) => handleUpdateItem(item.id, updates)}
-                    />
-                  ))}
-                </div>
+                <SortableContext
+                  items={foundItems.map((i) => i.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="items-list found-list">
+                    {foundItems.map((item) => (
+                      <ShoppingItem
+                        key={item.id}
+                        item={item}
+                        onToggle={() => handleToggleFound(item)}
+                        onDelete={() => handleDeleteItem(item.id)}
+                        onUpdate={(updates) => handleUpdateItem(item.id, updates)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
               </div>
             )}
-          </>
+          </DndContext>
         )}
       </main>
 

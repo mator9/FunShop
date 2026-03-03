@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const CATEGORY_COLORS = {
   'Produce': '#22c55e',
@@ -18,6 +20,22 @@ export default function ShoppingItem({ item, onToggle, onDelete, onUpdate }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
   const handleSave = () => {
     if (editName.trim() && editName.trim() !== item.name) {
       onUpdate({ name: editName.trim() });
@@ -26,7 +44,27 @@ export default function ShoppingItem({ item, onToggle, onDelete, onUpdate }) {
   };
 
   return (
-    <div className={`shopping-item ${item.is_found ? 'found' : ''}`}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`shopping-item ${item.is_found ? 'found' : ''} ${isDragging ? 'dragging' : ''}`}
+    >
+      <button
+        className="drag-handle"
+        {...attributes}
+        {...listeners}
+        title="Drag to reorder"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="9" cy="6" r="1" fill="currentColor"/>
+          <circle cx="15" cy="6" r="1" fill="currentColor"/>
+          <circle cx="9" cy="12" r="1" fill="currentColor"/>
+          <circle cx="15" cy="12" r="1" fill="currentColor"/>
+          <circle cx="9" cy="18" r="1" fill="currentColor"/>
+          <circle cx="15" cy="18" r="1" fill="currentColor"/>
+        </svg>
+      </button>
+
       <button
         className={`check-btn ${item.is_found ? 'checked' : ''}`}
         onClick={onToggle}

@@ -131,6 +131,26 @@ app.post('/api/lists/:listId/items', async (req, res) => {
   }
 });
 
+// Reorder items in a list
+app.patch('/api/lists/:listId/items/reorder', async (req, res) => {
+  try {
+    const { itemIds } = req.body;
+    if (!Array.isArray(itemIds) || itemIds.length === 0) {
+      return res.status(400).json({ error: 'itemIds array is required' });
+    }
+    const list = await db.getListById(req.params.listId);
+    if (!list) {
+      return res.status(404).json({ error: 'List not found' });
+    }
+    const items = await db.reorderItems(req.params.listId, itemIds);
+    io.to(req.params.listId).emit('items:reordered', items);
+    res.json(items);
+  } catch (err) {
+    console.error('Error reordering items:', err);
+    res.status(500).json({ error: 'Failed to reorder items' });
+  }
+});
+
 // Update an item (whitelist allowed fields)
 app.patch('/api/items/:id', async (req, res) => {
   try {
