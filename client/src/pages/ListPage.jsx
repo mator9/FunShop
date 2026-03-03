@@ -30,6 +30,7 @@ export default function ListPage() {
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState('');
   const [userName, setUserName] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState(socket.connected ? 'connected' : 'disconnected');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -75,7 +76,31 @@ export default function ListPage() {
 
   // Socket.io real-time events
   useEffect(() => {
+    const joinListAndRefresh = () => {
+      socket.emit('join:list', id);
+      fetchList();
+    };
+
+    // Initial join
     socket.emit('join:list', id);
+
+    // Handle reconnection - re-join room and refresh data
+    const handleConnect = () => {
+      setConnectionStatus('connected');
+      joinListAndRefresh();
+    };
+
+    const handleDisconnect = () => {
+      setConnectionStatus('disconnected');
+    };
+
+    const handleReconnectAttempt = () => {
+      setConnectionStatus('reconnecting');
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.io.on('reconnect_attempt', handleReconnectAttempt);
 
     socket.on('item:added', (item) => {
       setItems((prev) => {
@@ -107,6 +132,9 @@ export default function ListPage() {
 
     return () => {
       socket.emit('leave:list', id);
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.io.off('reconnect_attempt', handleReconnectAttempt);
       socket.off('item:added');
       socket.off('item:updated');
       socket.off('item:deleted');
@@ -114,7 +142,27 @@ export default function ListPage() {
       socket.off('list:updated');
       socket.off('list:deleted');
     };
-  }, [id, navigate]);
+  }, [id, navigate, fetchList]);
+
+  // Handle page visibility changes (wake from sleep/idle)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        if (!socket.connected) {
+          socket.connect();
+        } else {
+          socket.emit('join:list', id);
+          fetchList();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [id, fetchList]);
 
   const handleAddItem = async (itemData) => {
     try {
@@ -262,6 +310,30 @@ export default function ListPage() {
 
   return (
     <div className="list-page">
+      {connectionStatus !== 'connected' && (
+        <div className={`connection-banner ${connectionStatus}`}>
+          {connectionStatus === 'disconnected' && (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="1" y1="1" x2="23" y2="23"/>
+                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+                <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                <line x1="12" y1="20" x2="12.01" y2="20"/>
+              </svg>
+              Connection lost. Reconnecting...
+            </>
+          )}
+          {connectionStatus === 'reconnecting' && (
+            <>
+              <div className="spinner-small"></div>
+              Reconnecting...
+            </>
+          )}
+        </div>
+      )}
       <header className="list-header">
         <div className="header-top">
           <button className="btn-icon" onClick={() => navigate('/')} title="Go home">
