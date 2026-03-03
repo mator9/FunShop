@@ -40,10 +40,10 @@ export function deleteList(id) {
 }
 
 // Item APIs
-export function addItem(listId, { name, quantity, category, addedBy }) {
+export function addItem(listId, { name, quantity, addedBy }) {
   return request(`/lists/${listId}/items`, {
     method: 'POST',
-    body: JSON.stringify({ name, quantity, category, addedBy }),
+    body: JSON.stringify({ name, quantity, addedBy }),
   });
 }
 
