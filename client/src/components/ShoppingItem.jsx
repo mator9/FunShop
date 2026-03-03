@@ -106,7 +106,7 @@ export default function ShoppingItem({ item, onToggle, onDelete, onUpdate }) {
                   {item.category}
                 </span>
               )}
-              {item.is_found && item.found_by && (
+              {!!item.is_found && item.found_by && (
                 <span className="item-found-by">found by {item.found_by}</span>
               )}
               {!item.is_found && item.added_by && (
