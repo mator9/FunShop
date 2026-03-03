@@ -930,6 +930,79 @@ input, button, select, textarea {
   flex-shrink: 0;
 }
 
+/* ============ Nickname Modal ============ */
+.nickname-modal {
+  max-width: 400px;
+}
+
+.nickname-description {
+  color: var(--gray-500);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.nickname-input-group {
+  margin-bottom: 8px;
+}
+
+.nickname-input-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-bottom: 8px;
+}
+
+.nickname-input-group input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nickname-input-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.nickname-error {
+  display: block;
+  color: var(--error);
+  font-size: 0.8rem;
+  margin-top: 6px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px 24px;
+  justify-content: flex-end;
+}
+
+.modal-footer .btn {
+  min-width: 100px;
+}
+
+.btn-secondary {
+  background: var(--gray-100);
+  color: var(--gray-600);
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--gray-200);
+}
+
 /* ============ Join Page ============ */
 .join-page {
   min-height: 100vh;
