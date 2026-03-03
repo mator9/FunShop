@@ -174,10 +174,14 @@ export default function ListPage() {
 
   const handleToggleFound = async (item) => {
     try {
-      await updateItem(item.id, {
+      const updates = {
         is_found: !item.is_found,
         found_by: !item.is_found ? userName : '',
-      });
+      };
+      if (!item.is_found) {
+        updates.looking_for_by = '';
+      }
+      await updateItem(item.id, updates);
     } catch (err) {
       console.error('Failed to toggle item:', err);
     }
@@ -438,6 +442,7 @@ export default function ListPage() {
                       <ShoppingItem
                         key={item.id}
                         item={item}
+                        userName={userName}
                         onToggle={() => handleToggleFound(item)}
                         onDelete={() => handleDeleteItem(item.id)}
                         onUpdate={(updates) => handleUpdateItem(item.id, updates)}
@@ -463,6 +468,7 @@ export default function ListPage() {
                       <ShoppingItem
                         key={item.id}
                         item={item}
+                        userName={userName}
                         onToggle={() => handleToggleFound(item)}
                         onDelete={() => handleDeleteItem(item.id)}
                         onUpdate={(updates) => handleUpdateItem(item.id, updates)}

@@ -16,7 +16,7 @@ const CATEGORY_COLORS = {
   'Other': '#6b7280',
 };
 
-export default function ShoppingItem({ item, onToggle, onDelete, onUpdate }) {
+export default function ShoppingItem({ item, onToggle, onDelete, onUpdate, userName }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
 
@@ -109,13 +109,32 @@ export default function ShoppingItem({ item, onToggle, onDelete, onUpdate }) {
               {!!item.is_found && item.found_by && (
                 <span className="item-found-by">found by {item.found_by}</span>
               )}
-              {!item.is_found && item.added_by && (
+              {!item.is_found && item.looking_for_by && (
+                <span className="item-looking-for">looking for by {item.looking_for_by}</span>
+              )}
+              {!item.is_found && !item.looking_for_by && item.added_by && (
                 <span className="item-added-by">by {item.added_by}</span>
               )}
             </div>
           </div>
         )}
       </div>
+
+      {!item.is_found && (
+        <button
+          className={`btn-icon btn-looking-for ${item.looking_for_by ? 'active' : ''}`}
+          onClick={() => {
+            const isCurrentlyLooking = item.looking_for_by === userName;
+            onUpdate({ looking_for_by: isCurrentlyLooking ? '' : userName });
+          }}
+          title={item.looking_for_by === userName ? "Stop looking for this" : "I'm looking for this"}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
+      )}
 
       <button className="btn-icon btn-delete-item" onClick={onDelete} title="Remove item">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -687,10 +687,16 @@ input, button, select, textarea {
 }
 
 .item-found-by,
-.item-added-by {
+.item-added-by,
+.item-looking-for {
   font-size: 0.75rem;
   color: var(--gray-400);
   font-style: italic;
+}
+
+.item-looking-for {
+  color: var(--warning);
+  font-weight: 500;
 }
 
 .edit-input {
@@ -701,6 +707,29 @@ input, button, select, textarea {
   font-size: 0.95rem;
   font-weight: 500;
   outline: none;
+}
+
+.btn-looking-for {
+  opacity: 0;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: var(--gray-400);
+}
+
+.shopping-item:hover .btn-looking-for {
+  opacity: 1;
+}
+
+.btn-looking-for:hover {
+  color: var(--warning) !important;
+  background: rgba(245, 158, 11, 0.1) !important;
+}
+
+.btn-looking-for.active {
+  opacity: 1;
+  color: var(--warning);
+  background: rgba(245, 158, 11, 0.15);
 }
 
 .btn-delete-item {
