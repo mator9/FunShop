@@ -1,6 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createList, getListByShareCode } from '../api';
+
+const SAVED_LISTS_KEY = 'shopping_list_saved_lists';
+
+export function getSavedLists() {
+  try {
+    const saved = localStorage.getItem(SAVED_LISTS_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveListToStorage(list) {
+  const lists = getSavedLists();
+  const existingIndex = lists.findIndex(l => l.id === list.id);
+  const listData = {
+    id: list.id,
+    name: list.name,
+    shareCode: list.share_code,
+    lastAccessed: Date.now(),
+  };
+  
+  if (existingIndex >= 0) {
+    lists[existingIndex] = { ...lists[existingIndex], ...listData };
+  } else {
+    lists.unshift(listData);
+  }
+  
+  const sortedLists = lists.sort((a, b) => b.lastAccessed - a.lastAccessed).slice(0, 20);
+  localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(sortedLists));
+}
+
+export function removeListFromStorage(listId) {
+  const lists = getSavedLists().filter(l => l.id !== listId);
+  localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(lists));
+}
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -9,6 +45,11 @@ export default function HomePage() {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
+  const [savedLists, setSavedLists] = useState([]);
+
+  useEffect(() => {
+    setSavedLists(getSavedLists());
+  }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -17,6 +58,7 @@ export default function HomePage() {
     setError('');
     try {
       const list = await createList(listName.trim());
+      saveListToStorage(list);
       navigate(`/list/${list.id}`);
     } catch (err) {
       setError(err.message);
@@ -31,11 +73,33 @@ export default function HomePage() {
     setError('');
     try {
       const list = await getListByShareCode(shareCode.trim());
+      saveListToStorage(list);
       navigate(`/list/${list.id}`);
     } catch (err) {
       setError('List not found. Check the share code and try again.');
       setJoining(false);
     }
+  };
+
+  const handleRemoveList = (e, listId) => {
+    e.stopPropagation();
+    e.preventDefault();
+    removeListFromStorage(listId);
+    setSavedLists(getSavedLists());
+  };
+
+  const formatLastAccessed = (timestamp) => {
+    const diff = Date.now() - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days}d ago`;
+    return new Date(timestamp).toLocaleDateString();
   };
 
   return (
@@ -107,6 +171,44 @@ export default function HomePage() {
             </form>
           </div>
         </div>
+
+        {savedLists.length > 0 && (
+          <div className="my-lists-section">
+            <h3 className="my-lists-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+              </svg>
+              My Lists
+            </h3>
+            <div className="my-lists">
+              {savedLists.map(list => (
+                <div 
+                  key={list.id} 
+                  className="my-list-item"
+                  onClick={() => navigate(`/list/${list.id}`)}
+                >
+                  <div className="my-list-info">
+                    <span className="my-list-name">{list.name}</span>
+                    <span className="my-list-meta">
+                      <span className="my-list-code">{list.shareCode}</span>
+                      <span className="my-list-time">{formatLastAccessed(list.lastAccessed)}</span>
+                    </span>
+                  </div>
+                  <button 
+                    className="btn-icon btn-remove-list" 
+                    onClick={(e) => handleRemoveList(e, list.id)}
+                    title="Remove from my lists"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="features">
           <div className="feature">

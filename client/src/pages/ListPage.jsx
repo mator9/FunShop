@@ -5,6 +5,7 @@ import { socket } from '../socket';
 import ShoppingItem from '../components/ShoppingItem';
 import ShareModal from '../components/ShareModal';
 import AddItemForm from '../components/AddItemForm';
+import { saveListToStorage, removeListFromStorage } from './HomePage';
 import {
   DndContext,
   closestCenter,
@@ -63,6 +64,7 @@ export default function ListPage() {
       setItems(data.items || []);
       setNewName(data.name);
       setError('');
+      saveListToStorage(data);
     } catch (err) {
       setError('List not found');
     } finally {
@@ -124,9 +126,11 @@ export default function ListPage() {
     socket.on('list:updated', (updatedList) => {
       setList(updatedList);
       setNewName(updatedList.name);
+      saveListToStorage(updatedList);
     });
 
     socket.on('list:deleted', () => {
+      removeListFromStorage(id);
       navigate('/', { replace: true });
     });
 
@@ -203,6 +207,7 @@ export default function ListPage() {
     if (window.confirm('Are you sure you want to delete this entire list? This cannot be undone.')) {
       try {
         await deleteList(id);
+        removeListFromStorage(id);
         navigate('/', { replace: true });
       } catch (err) {
         console.error('Failed to delete list:', err);
