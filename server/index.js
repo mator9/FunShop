@@ -10,6 +10,16 @@ function generateId(length = 12) {
   return crypto.randomBytes(length).toString('base64url').slice(0, length);
 }
 
+function generateShareCode(length = 4) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const bytes = crypto.randomBytes(length);
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars[bytes[i] % chars.length];
+  }
+  return result;
+}
+
 const app = express();
 const server = http.createServer(app);
 
@@ -40,7 +50,7 @@ app.post('/api/lists', async (req, res) => {
       return res.status(400).json({ error: 'List name is required' });
     }
     const id = generateId(12);
-    const shareCode = generateId(8);
+    const shareCode = generateShareCode(4);
     const list = await db.createList(id, name.trim(), shareCode);
     res.status(201).json(list);
   } catch (err) {
