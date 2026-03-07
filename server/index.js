@@ -154,8 +154,8 @@ app.patch('/api/lists/:listId/items/reorder', async (req, res) => {
 // Update an item (whitelist allowed fields)
 app.patch('/api/items/:id', async (req, res) => {
   try {
-    const { name, quantity, category, is_found, found_by } = req.body;
-    const item = await db.updateItem(req.params.id, { name, quantity, category, is_found, found_by });
+    const { name, quantity, category, is_found, found_by, looking_for_by } = req.body;
+    const item = await db.updateItem(req.params.id, { name, quantity, category, is_found, found_by, looking_for_by });
     if (!item) {
       return res.status(404).json({ error: 'Item not found' });
     }

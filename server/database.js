@@ -40,6 +40,7 @@ async function initializeDb() {
       category TEXT DEFAULT '',
       is_found INTEGER DEFAULT 0,
       found_by TEXT DEFAULT '',
+      looking_for_by TEXT DEFAULT '',
       added_by TEXT DEFAULT 'Anonymous',
       sort_order INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -54,6 +55,7 @@ async function initializeDb() {
   // CREATE TABLE IF NOT EXISTS won't alter an existing table, so we need
   // an explicit ALTER TABLE for databases created before this feature.
   await migrateAddSortOrder();
+  await migrateAddLookingForBy();
 }
 
 async function migrateAddSortOrder() {
@@ -90,6 +92,22 @@ async function migrateAddSortOrder() {
       return; // Column already exists, nothing to do
     }
     console.error('Migration warning (sort_order):', err.message);
+  }
+}
+
+async function migrateAddLookingForBy() {
+  try {
+    const tableInfo = await client.execute("PRAGMA table_info(items)");
+    const hasLookingForBy = tableInfo.rows.some((row) => row.name === 'looking_for_by');
+    if (hasLookingForBy) return;
+
+    await client.execute("ALTER TABLE items ADD COLUMN looking_for_by TEXT DEFAULT ''");
+    console.log('Migration complete: added looking_for_by column to items table');
+  } catch (err) {
+    if (err.message && err.message.includes('duplicate column')) {
+      return;
+    }
+    console.error('Migration warning (looking_for_by):', err.message);
   }
 }
 
@@ -190,6 +208,7 @@ async function updateItem(id, updates) {
   if (updates.category !== undefined) { fields.push('category = ?'); values.push(updates.category); }
   if (updates.is_found !== undefined) { fields.push('is_found = ?'); values.push(updates.is_found ? 1 : 0); }
   if (updates.found_by !== undefined) { fields.push('found_by = ?'); values.push(updates.found_by); }
+  if (updates.looking_for_by !== undefined) { fields.push('looking_for_by = ?'); values.push(updates.looking_for_by); }
 
   if (fields.length === 0) return item;
 
