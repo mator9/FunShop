@@ -5,6 +5,7 @@ import { socket } from '../socket';
 import ShoppingItem from '../components/ShoppingItem';
 import ShareModal from '../components/ShareModal';
 import AddItemForm from '../components/AddItemForm';
+import NicknameModal from '../components/NicknameModal';
 import {
   DndContext,
   closestCenter,
@@ -30,6 +31,7 @@ export default function ListPage() {
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState('');
   const [userName, setUserName] = useState('');
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(socket.connected ? 'connected' : 'disconnected');
 
   const sensors = useSensors(
@@ -49,11 +51,15 @@ export default function ListPage() {
     if (stored) {
       setUserName(stored);
     } else {
-      const name = `User-${Math.floor(Math.random() * 9999)}`;
-      localStorage.setItem('shopping_list_username', name);
-      setUserName(name);
+      setShowNicknameModal(true);
     }
   }, []);
+
+  const handleNicknameSave = (name) => {
+    localStorage.setItem('shopping_list_username', name);
+    setUserName(name);
+    setShowNicknameModal(false);
+  };
 
   // Fetch list data
   const fetchList = useCallback(async () => {
@@ -487,6 +493,10 @@ export default function ListPage() {
           list={list}
           onClose={() => setShowShare(false)}
         />
+      )}
+
+      {showNicknameModal && (
+        <NicknameModal onSave={handleNicknameSave} />
       )}
     </div>
   );
