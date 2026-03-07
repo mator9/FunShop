@@ -10,6 +10,19 @@ function generateId(length = 12) {
   return crypto.randomBytes(length).toString('base64url').slice(0, length);
 }
 
+function generateShareCode(length = 4) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const maxValid = 256 - (256 % chars.length); // Reject biased values
+  let result = '';
+  while (result.length < length) {
+    const byte = crypto.randomBytes(1)[0];
+    if (byte < maxValid) {
+      result += chars[byte % chars.length];
+    }
+  }
+  return result;
+}
+
 const app = express();
 const server = http.createServer(app);
 
@@ -40,8 +53,25 @@ app.post('/api/lists', async (req, res) => {
       return res.status(400).json({ error: 'List name is required' });
     }
     const id = generateId(12);
-    const shareCode = generateId(8);
-    const list = await db.createList(id, name.trim(), shareCode);
+    
+    // Retry up to 5 times in case of share code collision
+    let list = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const shareCode = generateShareCode(4);
+      try {
+        list = await db.createList(id, name.trim(), shareCode);
+        break;
+      } catch (err) {
+        if (err.message && err.message.includes('UNIQUE constraint failed') && attempt < 4) {
+          continue; // Retry with a new share code
+        }
+        throw err;
+      }
+    }
+    
+    if (!list) {
+      return res.status(500).json({ error: 'Failed to generate unique share code' });
+    }
     res.status(201).json(list);
   } catch (err) {
     console.error('Error creating list:', err);
@@ -67,7 +97,9 @@ app.get('/api/lists/:id', async (req, res) => {
 // Get a list by share code
 app.get('/api/lists/share/:shareCode', async (req, res) => {
   try {
-    const list = await db.getListByShareCode(req.params.shareCode);
+    // Normalize to uppercase for case-insensitive lookup
+    const shareCode = req.params.shareCode.toUpperCase();
+    const list = await db.getListByShareCode(shareCode);
     if (!list) {
       return res.status(404).json({ error: 'List not found' });
     }

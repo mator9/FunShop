@@ -98,8 +98,8 @@ export default function HomePage() {
                 type="text"
                 placeholder="Enter share code"
                 value={shareCode}
-                onChange={(e) => setShareCode(e.target.value)}
-                maxLength={20}
+                onChange={(e) => setShareCode(e.target.value.toUpperCase())}
+                maxLength={4}
               />
               <button type="submit" className="btn btn-secondary" disabled={joining || !shareCode.trim()}>
                 {joining ? 'Joining...' : 'Join List'}
