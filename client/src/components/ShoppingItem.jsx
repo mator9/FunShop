@@ -16,7 +16,37 @@ const CATEGORY_COLORS = {
   'Other': '#6b7280',
 };
 
-export default function ShoppingItem({ item, onToggle, onDelete, onUpdate, userName }) {
+const UNIT_LABELS = {
+  'pcs': 'pcs',
+  'g': 'g',
+  'kg': 'kg',
+  'ml': 'ml',
+  'l': 'l',
+  'oz': 'oz',
+  'lb': 'lb',
+  'cups': 'cups',
+  'tbsp': 'tbsp',
+  'tsp': 'tsp',
+  'pack': 'pack',
+  'bottle': 'bottle',
+  'can': 'can',
+  'bag': 'bag',
+  'box': 'box',
+  'bunch': 'bunch',
+  'loaf': 'loaf',
+  'dozen': 'dozen',
+};
+
+function formatQuantityUnit(quantity, unit) {
+  if (!quantity || quantity === '1') {
+    if (!unit) return null;
+    return `1 ${UNIT_LABELS[unit] || unit}`;
+  }
+  if (!unit) return `x${quantity}`;
+  return `${quantity} ${UNIT_LABELS[unit] || unit}`;
+}
+
+export default function ShoppingItem({ item, onToggle, onDelete, onUpdate, onEditAmountUnit, userName }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
 
@@ -95,8 +125,24 @@ export default function ShoppingItem({ item, onToggle, onDelete, onUpdate, userN
           <div className="item-info" onDoubleClick={() => { setEditName(item.name); setEditing(true); }}>
             <span className="item-name">{item.name}</span>
             <div className="item-meta">
-              {item.quantity && item.quantity !== '1' && (
-                <span className="item-quantity">x{item.quantity}</span>
+              {formatQuantityUnit(item.quantity, item.unit) ? (
+                <button
+                  type="button"
+                  className="item-quantity item-quantity-btn"
+                  onClick={(e) => { e.stopPropagation(); onEditAmountUnit?.(); }}
+                  title="Edit amount & unit"
+                >
+                  {formatQuantityUnit(item.quantity, item.unit)}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="item-quantity-add"
+                  onClick={(e) => { e.stopPropagation(); onEditAmountUnit?.(); }}
+                  title="Set amount & unit"
+                >
+                  + qty
+                </button>
               )}
               {item.category && (
                 <span
