@@ -129,8 +129,70 @@ npm run dev:server
 
 1. **Create a list** — Enter a name on the home page and click "Create List"
 2. **Add items** — Type an item name and click "Add". Expand for quantity and category options
-3. **Share** — Click the "Share" button to get a share code or link
-4. **Join a list** — Enter a share code on the home page, or open the share link directly
-5. **Mark items found** — Click the checkbox next to an item when you find it
-6. **Edit items** — Double-click an item name to edit it
-7. **Delete items** — Hover over an item and click the X button
+3. **Paste from Chat** — On a list page, click "Paste from Chat" to extract items from a WhatsApp, Telegram, or plain-text chat message. Review and edit the parsed items before adding them
+4. **Create from Chat** — On the home page, paste chat text directly to create a new list pre-populated with extracted items
+5. **Share** — Click the "Share" button to get a share code or link
+6. **Join a list** — Enter a share code on the home page, or open the share link directly
+7. **Mark items found** — Click the checkbox next to an item when you find it
+8. **Edit items** — Double-click an item name to edit it
+9. **Delete items** — Hover over an item and click the X button
+
+## MCP Integration
+
+FunShop includes an [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that lets AI assistants like Claude Desktop or Cursor interact with your shopping lists.
+
+### Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `parse_chat` | Parse chat messages into structured shopping items |
+| `create_list` | Create a new shopping list |
+| `add_items` | Add multiple items to an existing list |
+| `get_list` | Get a list with all its items |
+| `parse_and_create` | One-shot: parse chat text, create a list, and populate it |
+
+### Setup
+
+Register the MCP server in your client's configuration (e.g. Claude Desktop `claude_desktop_config.json` or Cursor MCP settings):
+
+```json
+{
+  "mcpServers": {
+    "funshop": {
+      "command": "node",
+      "args": ["/absolute/path/to/FunShop/server/mcp-server.mjs"]
+    }
+  }
+}
+```
+
+To use a Turso cloud database with the MCP server, pass the environment variables:
+
+```json
+{
+  "mcpServers": {
+    "funshop": {
+      "command": "node",
+      "args": ["/absolute/path/to/FunShop/server/mcp-server.mjs"],
+      "env": {
+        "TURSO_DATABASE_URL": "libsql://your-db.turso.io",
+        "TURSO_AUTH_TOKEN": "your-token"
+      }
+    }
+  }
+}
+```
+
+Without Turso env vars, the MCP server uses a local SQLite file (`server/shopping_lists.db`), the same database used during development.
+
+### AI-Powered Chat Parsing
+
+By default, the chat parser uses heuristic regex patterns (no API key required). To use an AI provider for more accurate parsing, set the following environment variables:
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `AI_PROVIDER` | Parser backend: `heuristic`, `anthropic`, or `openai` | `heuristic` |
+| `ANTHROPIC_API_KEY` | API key for Anthropic (Claude) | — |
+| `OPENAI_API_KEY` | API key for OpenAI (GPT) | — |
+
+AI providers require installing their respective SDK (`npm install @anthropic-ai/sdk` or `npm install openai` in the `server/` directory).

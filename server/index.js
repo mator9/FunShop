@@ -5,6 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
 const db = require('./database');
+const { parseChatToItems } = require('./chat-parser');
 
 function generateId(length = 12) {
   return crypto.randomBytes(length).toString('base64url').slice(0, length);
@@ -179,6 +180,56 @@ app.delete('/api/items/:id', async (req, res) => {
   } catch (err) {
     console.error('Error deleting item:', err);
     res.status(500).json({ error: 'Failed to delete item' });
+  }
+});
+
+// Parse chat text into structured shopping items (preview only, no persistence)
+app.post('/api/parse-chat', async (req, res) => {
+  try {
+    const { text, provider } = req.body;
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+    const result = await parseChatToItems(text, { provider });
+    res.json(result);
+  } catch (err) {
+    console.error('Error parsing chat:', err);
+    res.status(500).json({ error: err.message || 'Failed to parse chat text' });
+  }
+});
+
+// Batch-add items to a list in one request
+app.post('/api/lists/:listId/items/batch', async (req, res) => {
+  try {
+    const { items } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'items array is required' });
+    }
+    const list = await db.getListById(req.params.listId);
+    if (!list) {
+      return res.status(404).json({ error: 'List not found' });
+    }
+
+    const created = [];
+    for (const entry of items) {
+      if (!entry.name || !entry.name.trim()) continue;
+      const id = generateId(12);
+      const item = await db.addItem(
+        id,
+        req.params.listId,
+        entry.name.trim(),
+        entry.quantity,
+        entry.category,
+        entry.addedBy
+      );
+      created.push(item);
+    }
+
+    io.to(req.params.listId).emit('items:batch-added', created);
+    res.status(201).json(created);
+  } catch (err) {
+    console.error('Error batch adding items:', err);
+    res.status(500).json({ error: 'Failed to add items' });
   }
 });
 

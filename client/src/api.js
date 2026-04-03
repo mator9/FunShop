@@ -64,3 +64,18 @@ export function reorderItems(listId, itemIds) {
 export function deleteItem(id) {
   return request(`/items/${id}`, { method: 'DELETE' });
 }
+
+// Chat parsing
+export function parseChatText(text, provider) {
+  return request('/parse-chat', {
+    method: 'POST',
+    body: JSON.stringify({ text, provider }),
+  });
+}
+
+export function batchAddItems(listId, items) {
+  return request(`/lists/${listId}/items/batch`, {
+    method: 'POST',
+    body: JSON.stringify({ items }),
+  });
+}

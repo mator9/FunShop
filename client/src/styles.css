@@ -1202,6 +1202,244 @@ input, button, select, textarea {
   background: var(--primary-light);
 }
 
+/* ============ Paste from Chat Button ============ */
+.add-item-area {
+  margin-bottom: 24px;
+}
+
+.add-item-area .add-item-form {
+  margin-bottom: 8px;
+}
+
+.btn-paste-chat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  border: 1px dashed var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-paste-chat:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* ============ Paste Chat Modal ============ */
+.paste-chat-modal {
+  max-width: 560px;
+}
+
+.paste-chat-description {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.paste-drop-zone {
+  position: relative;
+  border-radius: var(--radius);
+  transition: all var(--transition);
+}
+
+.paste-drop-zone.drag-active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.paste-drop-zone textarea {
+  width: 100%;
+  padding: 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, monospace;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--transition);
+  background: var(--gray-50);
+  min-height: 160px;
+}
+
+.paste-drop-zone textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background: white;
+}
+
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(37, 99, 235, 0.08);
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius);
+  color: var(--primary);
+  font-weight: 500;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.paste-chat-error {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+}
+
+.paste-chat-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+/* ============ Parsed Items Review ============ */
+.parsed-items-review {
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.review-description {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+.review-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 40vh;
+  padding-right: 4px;
+}
+
+.review-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  transition: border-color var(--transition);
+}
+
+.review-item-row:hover {
+  border-color: var(--gray-300);
+}
+
+.review-item-fields {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.review-name-input {
+  flex: 2;
+  padding: 8px 10px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  outline: none;
+  min-width: 0;
+  transition: border-color var(--transition);
+}
+
+.review-name-input:focus {
+  border-color: var(--primary);
+}
+
+.review-qty-input {
+  width: 90px;
+  flex-shrink: 0;
+  padding: 8px 10px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  outline: none;
+  text-align: center;
+  transition: border-color var(--transition);
+}
+
+.review-qty-input:focus {
+  border-color: var(--primary);
+}
+
+.btn-remove-item {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: var(--gray-400);
+}
+
+.btn-remove-item:hover {
+  color: var(--danger) !important;
+  background: var(--danger-light) !important;
+}
+
+.review-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--gray-400);
+  font-size: 0.9rem;
+}
+
+.review-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-100);
+}
+
+/* ============ Home Page: Paste Icon ============ */
+.paste-icon {
+  background: #f0fdf4;
+  color: var(--success);
+}
+
+.chat-paste-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, monospace;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--transition);
+  min-height: 80px;
+}
+
+.chat-paste-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
 /* ============ Join Page ============ */
 .join-page {
   min-height: 100vh;
@@ -1250,5 +1488,29 @@ input, button, select, textarea {
 
   .shopping-item {
     padding: 10px 12px;
+  }
+
+  .btn-delete-item {
+    opacity: 0.6;
+  }
+
+  .drag-handle {
+    color: var(--gray-400);
+  }
+
+  .review-item-fields {
+    flex-wrap: wrap;
+  }
+
+  .review-name-input {
+    flex-basis: 100%;
+  }
+
+  .review-qty-input {
+    flex: 1;
+  }
+
+  .paste-chat-modal {
+    max-width: 100%;
   }
 }

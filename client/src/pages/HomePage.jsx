@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createList, getListByShareCode } from '../api';
+import { createList, getListByShareCode, parseChatText, batchAddItems } from '../api';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -9,6 +9,9 @@ export default function HomePage() {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
+  const [chatText, setChatText] = useState('');
+  const [chatListName, setChatListName] = useState('');
+  const [parsingChat, setParsingChat] = useState(false);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -21,6 +24,29 @@ export default function HomePage() {
     } catch (err) {
       setError(err.message);
       setCreating(false);
+    }
+  };
+
+  const handleCreateFromChat = async (e) => {
+    e.preventDefault();
+    if (!chatText.trim()) return;
+    setParsingChat(true);
+    setError('');
+    try {
+      const result = await parseChatText(chatText);
+      if (!result.items || result.items.length === 0) {
+        setError('No items could be extracted from the pasted text.');
+        setParsingChat(false);
+        return;
+      }
+      const name = chatListName.trim() || 'Shopping List';
+      const list = await createList(name);
+      const userName = localStorage.getItem('shopping_list_username') || 'Anonymous';
+      await batchAddItems(list.id, result.items.map((item) => ({ ...item, addedBy: userName })));
+      navigate(`/list/${list.id}`);
+    } catch (err) {
+      setError(err.message);
+      setParsingChat(false);
     }
   };
 
@@ -103,6 +129,39 @@ export default function HomePage() {
               />
               <button type="submit" className="btn btn-secondary" disabled={joining || !shareCode.trim()}>
                 {joining ? 'Joining...' : 'Join List'}
+              </button>
+            </form>
+          </div>
+          <div className="divider-text">
+            <span>or</span>
+          </div>
+
+          <div className="card">
+            <div className="card-icon paste-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+              </svg>
+            </div>
+            <h2>Create from Chat</h2>
+            <p>Paste a group chat and we'll extract the shopping items</p>
+            <form onSubmit={handleCreateFromChat}>
+              <input
+                type="text"
+                placeholder="List name (optional)"
+                value={chatListName}
+                onChange={(e) => setChatListName(e.target.value)}
+                maxLength={100}
+              />
+              <textarea
+                className="chat-paste-input"
+                placeholder={'Paste chat messages here...\ne.g. "[10/03] Alice: We need milk"'}
+                value={chatText}
+                onChange={(e) => setChatText(e.target.value)}
+                rows={4}
+              />
+              <button type="submit" className="btn btn-primary" disabled={parsingChat || !chatText.trim()}>
+                {parsingChat ? 'Creating...' : 'Create from Chat'}
               </button>
             </form>
           </div>

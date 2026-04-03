@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getList, addItem, updateItem, deleteItem, deleteList, updateListName, reorderItems } from '../api';
+import { getList, addItem, updateItem, deleteItem, deleteList, updateListName, reorderItems, batchAddItems } from '../api';
 import { socket } from '../socket';
 import ShoppingItem from '../components/ShoppingItem';
 import ShareModal from '../components/ShareModal';
 import AddItemForm from '../components/AddItemForm';
 import NicknameModal from '../components/NicknameModal';
 import AmountUnitModal from '../components/AmountUnitModal';
+import PasteChatModal from '../components/PasteChatModal';
 import {
   DndContext,
   closestCenter,
@@ -33,6 +34,7 @@ export default function ListPage() {
   const [newName, setNewName] = useState('');
   const [userName, setUserName] = useState('');
   const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [showPasteChat, setShowPasteChat] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(socket.connected ? 'connected' : 'disconnected');
   const [amountUnitItem, setAmountUnitItem] = useState(null);
 
@@ -129,6 +131,14 @@ export default function ListPage() {
       setItems(reorderedItems);
     });
 
+    socket.on('items:batch-added', (newItems) => {
+      setItems((prev) => {
+        const existingIds = new Set(prev.map((i) => i.id));
+        const unique = newItems.filter((i) => !existingIds.has(i.id));
+        return [...prev, ...unique];
+      });
+    });
+
     socket.on('list:updated', (updatedList) => {
       setList(updatedList);
       setNewName(updatedList.name);
@@ -147,6 +157,7 @@ export default function ListPage() {
       socket.off('item:updated');
       socket.off('item:deleted');
       socket.off('items:reordered');
+      socket.off('items:batch-added');
       socket.off('list:updated');
       socket.off('list:deleted');
     };
@@ -194,6 +205,18 @@ export default function ListPage() {
 
   const handleEditAmountUnit = (item) => {
     setAmountUnitItem(item);
+  };
+
+  const handleBatchAdd = async (parsedItems) => {
+    try {
+      const itemsWithUser = parsedItems.map((item) => ({
+        ...item,
+        addedBy: userName,
+      }));
+      await batchAddItems(id, itemsWithUser);
+    } catch (err) {
+      console.error('Failed to batch add items:', err);
+    }
   };
 
   const handleToggleFound = async (item) => {
@@ -433,7 +456,20 @@ export default function ListPage() {
       </header>
 
       <main className="list-content">
-        <AddItemForm onAdd={handleAddItem} />
+        <div className="add-item-area">
+          <AddItemForm onAdd={handleAddItem} />
+          <button
+            className="btn btn-paste-chat"
+            onClick={() => setShowPasteChat(true)}
+            title="Paste items from a chat message"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+            </svg>
+            Paste from Chat
+          </button>
+        </div>
 
         {items.length === 0 ? (
           <div className="empty-state">
@@ -524,6 +560,13 @@ export default function ListPage() {
           item={amountUnitItem}
           onSave={handleAmountUnitSave}
           onClose={() => setAmountUnitItem(null)}
+        />
+      )}
+
+      {showPasteChat && (
+        <PasteChatModal
+          onAdd={handleBatchAdd}
+          onClose={() => setShowPasteChat(false)}
         />
       )}
     </div>
