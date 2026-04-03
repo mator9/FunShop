@@ -667,57 +667,32 @@ input, button, select, textarea {
 }
 
 .btn-looking-for {
-  opacity: 0;
   width: 28px;
   height: 28px;
   flex-shrink: 0;
   color: var(--gray-400);
 }
 
-@media (hover: hover) {
-  .shopping-item:hover .btn-looking-for {
-    opacity: 1;
-  }
-
-  .btn-looking-for:hover {
-    color: var(--warning) !important;
-    background: rgba(245, 158, 11, 0.1) !important;
-  }
+.btn-looking-for:hover {
+  color: var(--warning) !important;
+  background: rgba(245, 158, 11, 0.1) !important;
 }
 
 .btn-looking-for.active {
-  opacity: 1;
   color: var(--warning);
   background: rgba(245, 158, 11, 0.15);
 }
 
 .btn-delete-item {
-  opacity: 0;
   width: 28px;
   height: 28px;
   flex-shrink: 0;
   color: var(--gray-400);
 }
 
-@media (hover: hover) {
-  .shopping-item:hover .btn-delete-item {
-    opacity: 1;
-  }
-
-  .btn-delete-item:hover {
-    color: var(--danger) !important;
-    background: var(--danger-light) !important;
-  }
-}
-
-@media (hover: none) {
-  .btn-looking-for {
-    opacity: 0.6;
-  }
-
-  .btn-delete-item {
-    opacity: 0.6;
-  }
+.btn-delete-item:hover {
+  color: var(--danger) !important;
+  background: var(--danger-light) !important;
 }
 
 /* ============ Drag Handle ============ */
