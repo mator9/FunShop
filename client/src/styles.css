@@ -638,15 +638,6 @@ input, button, select, textarea {
   border-radius: 4px;
 }
 
-.item-category {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
 .item-found-by,
 .item-added-by,
 .item-looking-for {
