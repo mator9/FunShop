@@ -64,3 +64,18 @@ export function reorderItems(listId, itemIds) {
 export function deleteItem(id) {
   return request(`/items/${id}`, { method: 'DELETE' });
 }
+
+// MCP — Message-to-Cart Protocol
+export function parseChatMessages(text) {
+  return request('/parse-chat', {
+    method: 'POST',
+    body: JSON.stringify({ text }),
+  });
+}
+
+export function batchAddItems(listId, items, addedBy) {
+  return request(`/lists/${listId}/items/batch`, {
+    method: 'POST',
+    body: JSON.stringify({ items, addedBy }),
+  });
+}
