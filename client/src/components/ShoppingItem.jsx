@@ -2,21 +2,37 @@ import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const CATEGORY_COLORS = {
-  'Produce': '#22c55e',
-  'Dairy': '#3b82f6',
-  'Meat': '#ef4444',
-  'Bakery': '#f59e0b',
-  'Frozen': '#06b6d4',
-  'Beverages': '#8b5cf6',
-  'Snacks': '#f97316',
-  'Canned Goods': '#64748b',
-  'Household': '#ec4899',
-  'Personal Care': '#14b8a6',
-  'Other': '#6b7280',
+const UNIT_LABELS = {
+  'pcs': 'pcs',
+  'g': 'g',
+  'kg': 'kg',
+  'ml': 'ml',
+  'l': 'l',
+  'oz': 'oz',
+  'lb': 'lb',
+  'cups': 'cups',
+  'tbsp': 'tbsp',
+  'tsp': 'tsp',
+  'pack': 'pack',
+  'bottle': 'bottle',
+  'can': 'can',
+  'bag': 'bag',
+  'box': 'box',
+  'bunch': 'bunch',
+  'loaf': 'loaf',
+  'dozen': 'dozen',
 };
 
-export default function ShoppingItem({ item, onToggle, onDelete, onUpdate, userName }) {
+function formatQuantityUnit(quantity, unit) {
+  if (!quantity || quantity === '1') {
+    if (!unit) return null;
+    return `1 ${UNIT_LABELS[unit] || unit}`;
+  }
+  if (!unit) return `x${quantity}`;
+  return `${quantity} ${UNIT_LABELS[unit] || unit}`;
+}
+
+export default function ShoppingItem({ item, onToggle, onDelete, onUpdate, onEditAmountUnit, userName }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
 
@@ -94,17 +110,35 @@ export default function ShoppingItem({ item, onToggle, onDelete, onUpdate, userN
         ) : (
           <div className="item-info" onDoubleClick={() => { setEditName(item.name); setEditing(true); }}>
             <span className="item-name">{item.name}</span>
+            <button
+              className="btn-icon btn-edit-item"
+              onClick={(e) => { e.stopPropagation(); setEditName(item.name); setEditing(true); }}
+              title="Edit item name"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
             <div className="item-meta">
-              {item.quantity && item.quantity !== '1' && (
-                <span className="item-quantity">x{item.quantity}</span>
-              )}
-              {item.category && (
-                <span
-                  className="item-category"
-                  style={{ backgroundColor: `${CATEGORY_COLORS[item.category] || '#6b7280'}20`, color: CATEGORY_COLORS[item.category] || '#6b7280' }}
+              {formatQuantityUnit(item.quantity, item.unit) ? (
+                <button
+                  type="button"
+                  className="item-quantity item-quantity-btn"
+                  onClick={(e) => { e.stopPropagation(); onEditAmountUnit?.(); }}
+                  title="Edit amount & unit"
                 >
-                  {item.category}
-                </span>
+                  {formatQuantityUnit(item.quantity, item.unit)}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="item-quantity-add"
+                  onClick={(e) => { e.stopPropagation(); onEditAmountUnit?.(); }}
+                  title="Set amount & unit"
+                >
+                  + qty
+                </button>
               )}
               {!!item.is_found && item.found_by && (
                 <span className="item-found-by">found by {item.found_by}</span>

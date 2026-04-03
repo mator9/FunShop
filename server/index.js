@@ -113,7 +113,7 @@ app.delete('/api/lists/:id', async (req, res) => {
 // Add item to list
 app.post('/api/lists/:listId/items', async (req, res) => {
   try {
-    const { name, quantity, category, addedBy } = req.body;
+    const { name, quantity, addedBy, unit } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Item name is required' });
     }
@@ -122,7 +122,7 @@ app.post('/api/lists/:listId/items', async (req, res) => {
       return res.status(404).json({ error: 'List not found' });
     }
     const id = generateId(12);
-    const item = await db.addItem(id, req.params.listId, name.trim(), quantity, category, addedBy);
+    const item = await db.addItem(id, req.params.listId, name.trim(), quantity, addedBy, unit);
     io.to(req.params.listId).emit('item:added', item);
     res.status(201).json(item);
   } catch (err) {
@@ -154,8 +154,8 @@ app.patch('/api/lists/:listId/items/reorder', async (req, res) => {
 // Update an item (whitelist allowed fields)
 app.patch('/api/items/:id', async (req, res) => {
   try {
-    const { name, quantity, category, is_found, found_by, looking_for_by } = req.body;
-    const item = await db.updateItem(req.params.id, { name, quantity, category, is_found, found_by, looking_for_by });
+    const { name, quantity, unit, is_found, found_by, looking_for_by } = req.body;
+    const item = await db.updateItem(req.params.id, { name, quantity, unit, is_found, found_by, looking_for_by });
     if (!item) {
       return res.status(404).json({ error: 'Item not found' });
     }

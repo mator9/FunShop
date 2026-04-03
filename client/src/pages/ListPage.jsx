@@ -6,6 +6,7 @@ import ShoppingItem from '../components/ShoppingItem';
 import ShareModal from '../components/ShareModal';
 import AddItemForm from '../components/AddItemForm';
 import NicknameModal from '../components/NicknameModal';
+import AmountUnitModal from '../components/AmountUnitModal';
 import {
   DndContext,
   closestCenter,
@@ -33,6 +34,7 @@ export default function ListPage() {
   const [userName, setUserName] = useState('');
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(socket.connected ? 'connected' : 'disconnected');
+  const [amountUnitItem, setAmountUnitItem] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -172,10 +174,26 @@ export default function ListPage() {
 
   const handleAddItem = async (itemData) => {
     try {
-      await addItem(id, { ...itemData, addedBy: userName });
+      const newItem = await addItem(id, { ...itemData, addedBy: userName });
+      setAmountUnitItem(newItem);
     } catch (err) {
       console.error('Failed to add item:', err);
     }
+  };
+
+  const handleAmountUnitSave = async ({ quantity, unit }) => {
+    if (amountUnitItem) {
+      try {
+        await updateItem(amountUnitItem.id, { quantity, unit });
+      } catch (err) {
+        console.error('Failed to update amount/unit:', err);
+      }
+    }
+    setAmountUnitItem(null);
+  };
+
+  const handleEditAmountUnit = (item) => {
+    setAmountUnitItem(item);
   };
 
   const handleToggleFound = async (item) => {
@@ -452,6 +470,7 @@ export default function ListPage() {
                         onToggle={() => handleToggleFound(item)}
                         onDelete={() => handleDeleteItem(item.id)}
                         onUpdate={(updates) => handleUpdateItem(item.id, updates)}
+                        onEditAmountUnit={() => handleEditAmountUnit(item)}
                       />
                     ))}
                   </div>
@@ -478,6 +497,7 @@ export default function ListPage() {
                         onToggle={() => handleToggleFound(item)}
                         onDelete={() => handleDeleteItem(item.id)}
                         onUpdate={(updates) => handleUpdateItem(item.id, updates)}
+                        onEditAmountUnit={() => handleEditAmountUnit(item)}
                       />
                     ))}
                   </div>
@@ -497,6 +517,14 @@ export default function ListPage() {
 
       {showNicknameModal && (
         <NicknameModal onSave={handleNicknameSave} />
+      )}
+
+      {amountUnitItem && (
+        <AmountUnitModal
+          item={amountUnitItem}
+          onSave={handleAmountUnitSave}
+          onClose={() => setAmountUnitItem(null)}
+        />
       )}
     </div>
   );
