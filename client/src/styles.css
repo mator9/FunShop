@@ -1032,6 +1032,203 @@ input, button, select, textarea {
   background: var(--gray-200);
 }
 
+/* ============ Amount/Unit Modal ============ */
+.amount-unit-modal {
+  max-width: 520px;
+}
+
+.amount-modal-item-name {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  font-weight: 400;
+}
+
+.amount-preview {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--primary-light) 0%, #f0f9ff 100%);
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.amount-preview-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.amount-preview-unit {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.amount-preview-of {
+  font-size: 0.9rem;
+  color: var(--gray-500);
+}
+
+.amount-section {
+  margin-bottom: 20px;
+}
+
+.amount-section-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.quick-amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quick-amount-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  background: white;
+  color: var(--gray-700);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.quick-amount-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.quick-amount-btn.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: white;
+}
+
+.custom-amount-input {
+  width: 80px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  outline: none;
+  transition: all var(--transition);
+  text-align: center;
+}
+
+.custom-amount-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.custom-amount-input.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.unit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.unit-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius);
+  background: white;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: left;
+}
+
+.unit-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.unit-btn.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: white;
+}
+
+.unit-btn-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.unit-btn-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.unit-btn.active .unit-btn-label {
+  color: white;
+}
+
+/* Item quantity button in list */
+.item-quantity-btn {
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition);
+}
+
+.item-quantity-btn:hover {
+  background: var(--primary) !important;
+  color: white !important;
+  transform: scale(1.05);
+}
+
+.item-quantity-add {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gray-400);
+  background: transparent;
+  border: 1px dashed var(--gray-300);
+  padding: 1px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition);
+  opacity: 0;
+}
+
+.shopping-item:hover .item-quantity-add {
+  opacity: 1;
+}
+
+.item-quantity-add:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
 /* ============ Join Page ============ */
 .join-page {
   min-height: 100vh;
