@@ -62,7 +62,7 @@ app.post('/api/lists', async (req, res) => {
         list = await db.createList(id, name.trim(), shareCode);
         break;
       } catch (err) {
-        if (err.message && err.message.includes('UNIQUE constraint failed') && attempt < 4) {
+        if (err.message && err.message.includes('UNIQUE constraint failed')) {
           continue; // Retry with a new share code
         }
         throw err;
@@ -97,8 +97,10 @@ app.get('/api/lists/:id', async (req, res) => {
 // Get a list by share code
 app.get('/api/lists/share/:shareCode', async (req, res) => {
   try {
-    // Normalize to uppercase for case-insensitive lookup
-    const shareCode = req.params.shareCode.toUpperCase();
+    const rawCode = req.params.shareCode;
+    // Only normalize to uppercase for new 4-char alphanumeric codes;
+    // preserve old base64url codes (may contain lowercase, '-', '_') as-is
+    const shareCode = /^[A-Za-z0-9]{4}$/.test(rawCode) ? rawCode.toUpperCase() : rawCode;
     const list = await db.getListByShareCode(shareCode);
     if (!list) {
       return res.status(404).json({ error: 'List not found' });
