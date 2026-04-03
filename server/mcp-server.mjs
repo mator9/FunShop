@@ -83,7 +83,7 @@ server.tool(
       const id = generateId(12);
       const item = await db.addItem(
         id, listId, entry.name.trim(),
-        entry.quantity || '1', '', 'MCP'
+        entry.quantity || '1', 'MCP'
       );
       created.push(item);
     }
@@ -152,7 +152,7 @@ server.tool(
       const id = generateId(12);
       const item = await db.addItem(
         id, listId, entry.name.trim(),
-        entry.quantity || '1', '', 'MCP'
+        entry.quantity || '1', 'MCP'
       );
       created.push(item);
     }

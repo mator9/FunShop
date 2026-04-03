@@ -171,15 +171,15 @@ async function deleteList(id) {
 }
 
 // Item operations
-async function addItem(id, listId, name, quantity, category, addedBy, unit) {
+async function addItem(id, listId, name, quantity, addedBy, unit) {
   const maxResult = await client.execute({
     sql: 'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM items WHERE list_id = ?',
     args: [listId],
   });
   const nextOrder = Number(maxResult.rows[0]?.max_order ?? -1) + 1;
   await client.execute({
-    sql: 'INSERT INTO items (id, list_id, name, quantity, category, added_by, sort_order, unit) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    args: [id, listId, name, quantity || '1', category || '', addedBy || 'Anonymous', nextOrder, unit || ''],
+    sql: 'INSERT INTO items (id, list_id, name, quantity, added_by, sort_order, unit) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    args: [id, listId, name, quantity || '1', addedBy || 'Anonymous', nextOrder, unit || ''],
   });
   await updateListTimestamp(listId);
   return getItemById(id);
@@ -222,7 +222,6 @@ async function updateItem(id, updates) {
   if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
   if (updates.quantity !== undefined) { fields.push('quantity = ?'); values.push(updates.quantity); }
   if (updates.unit !== undefined) { fields.push('unit = ?'); values.push(updates.unit); }
-  if (updates.category !== undefined) { fields.push('category = ?'); values.push(updates.category); }
   if (updates.is_found !== undefined) { fields.push('is_found = ?'); values.push(updates.is_found ? 1 : 0); }
   if (updates.found_by !== undefined) { fields.push('found_by = ?'); values.push(updates.found_by); }
   if (updates.looking_for_by !== undefined) { fields.push('looking_for_by = ?'); values.push(updates.looking_for_by); }
