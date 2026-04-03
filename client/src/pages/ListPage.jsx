@@ -8,11 +8,13 @@ import AddItemForm from '../components/AddItemForm';
 import NicknameModal from '../components/NicknameModal';
 import AmountUnitModal from '../components/AmountUnitModal';
 import PasteChatModal from '../components/PasteChatModal';
+import Toast from '../components/Toast';
 import {
   DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -37,12 +39,26 @@ export default function ListPage() {
   const [showPasteChat, setShowPasteChat] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(socket.connected ? 'connected' : 'disconnected');
   const [amountUnitItem, setAmountUnitItem] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [reorderMode, setReorderMode] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5,
       },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const reorderSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { distance: 5 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -115,7 +131,7 @@ export default function ListPage() {
     socket.on('item:added', (item) => {
       setItems((prev) => {
         if (prev.find((i) => i.id === item.id)) return prev;
-        return [...prev, item];
+        return [item, ...prev];
       });
     });
 
@@ -185,8 +201,7 @@ export default function ListPage() {
 
   const handleAddItem = async (itemData) => {
     try {
-      const newItem = await addItem(id, { ...itemData, addedBy: userName });
-      setAmountUnitItem(newItem);
+      await addItem(id, { ...itemData, addedBy: userName });
     } catch (err) {
       console.error('Failed to add item:', err);
     }
@@ -321,6 +336,61 @@ export default function ListPage() {
     } catch (err) {
       console.error('Failed to reorder items:', err);
       // Revert on failure
+      fetchList();
+    }
+  };
+
+  const showToast = (message, undoAction) => {
+    setToast({ id: Date.now(), message, undoAction });
+  };
+
+  const handleSwipeRight = async (item) => {
+    if (item.is_found) {
+      const prevFoundBy = item.found_by;
+      try {
+        await updateItem(item.id, { is_found: false, found_by: '' });
+        showToast(`"${item.name}" restored`, async () => {
+          try {
+            await updateItem(item.id, { is_found: true, found_by: prevFoundBy || userName });
+          } catch (err) {
+            console.error('Failed to undo restore:', err);
+          }
+        });
+      } catch (err) {
+        console.error('Failed to restore item:', err);
+        fetchList();
+      }
+    } else {
+      const prevLookingFor = item.looking_for_by;
+      try {
+        await updateItem(item.id, { is_found: true, found_by: userName, looking_for_by: '' });
+        showToast(`"${item.name}" done`, async () => {
+          try {
+            await updateItem(item.id, { is_found: false, found_by: '', looking_for_by: prevLookingFor || '' });
+          } catch (err) {
+            console.error('Failed to undo done:', err);
+          }
+        });
+      } catch (err) {
+        console.error('Failed to mark item done:', err);
+        fetchList();
+      }
+    }
+  };
+
+  const handleSwipeLeft = async (item) => {
+    const savedItem = { ...item };
+    try {
+      await deleteItem(item.id);
+      showToast(`"${item.name}" deleted`, async () => {
+        try {
+          await addItem(id, { name: savedItem.name, addedBy: savedItem.added_by || userName });
+        } catch (err) {
+          console.error('Failed to undo delete:', err);
+        }
+      });
+    } catch (err) {
+      console.error('Failed to delete item:', err);
       fetchList();
     }
   };
@@ -483,7 +553,7 @@ export default function ListPage() {
           </div>
         ) : (
           <DndContext
-            sensors={sensors}
+            sensors={reorderMode ? reorderSensors : sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
@@ -507,6 +577,10 @@ export default function ListPage() {
                         onDelete={() => handleDeleteItem(item.id)}
                         onUpdate={(updates) => handleUpdateItem(item.id, updates)}
                         onEditAmountUnit={() => handleEditAmountUnit(item)}
+                        onSwipeRight={() => handleSwipeRight(item)}
+                        onSwipeLeft={() => handleSwipeLeft(item)}
+                        reorderMode={reorderMode}
+                        onLongPress={() => setReorderMode(true)}
                       />
                     ))}
                   </div>
@@ -534,6 +608,10 @@ export default function ListPage() {
                         onDelete={() => handleDeleteItem(item.id)}
                         onUpdate={(updates) => handleUpdateItem(item.id, updates)}
                         onEditAmountUnit={() => handleEditAmountUnit(item)}
+                        onSwipeRight={() => handleSwipeRight(item)}
+                        onSwipeLeft={() => handleSwipeLeft(item)}
+                        reorderMode={reorderMode}
+                        onLongPress={() => setReorderMode(true)}
                       />
                     ))}
                   </div>
@@ -567,6 +645,26 @@ export default function ListPage() {
         <PasteChatModal
           onAdd={handleBatchAdd}
           onClose={() => setShowPasteChat(false)}
+        />
+      )}
+
+      {reorderMode && (
+        <div className="reorder-bar">
+          <button className="btn btn-primary reorder-done-btn" onClick={() => setReorderMode(false)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Done Reordering
+          </button>
+        </div>
+      )}
+
+      {toast && (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          onUndo={toast.undoAction}
+          onDismiss={() => setToast(null)}
         />
       )}
     </div>
