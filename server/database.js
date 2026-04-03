@@ -37,7 +37,6 @@ async function initializeDb() {
       list_id TEXT NOT NULL,
       name TEXT NOT NULL,
       quantity TEXT DEFAULT '1',
-      category TEXT DEFAULT '',
       is_found INTEGER DEFAULT 0,
       found_by TEXT DEFAULT '',
       looking_for_by TEXT DEFAULT '',
@@ -57,6 +56,7 @@ async function initializeDb() {
   await migrateAddSortOrder();
   await migrateAddLookingForBy();
   await migrateAddUnit();
+  await migrateDropCategory();
 }
 
 async function migrateAddSortOrder() {
@@ -125,6 +125,22 @@ async function migrateAddUnit() {
       return;
     }
     console.error('Migration warning (unit):', err.message);
+  }
+}
+
+async function migrateDropCategory() {
+  try {
+    const tableInfo = await client.execute("PRAGMA table_info(items)");
+    const hasCategory = tableInfo.rows.some((row) => row.name === 'category');
+    if (!hasCategory) return;
+
+    await client.execute('ALTER TABLE items DROP COLUMN category');
+    console.log('Migration complete: dropped category column from items table');
+  } catch (err) {
+    if (err.message && err.message.includes('no such column')) {
+      return;
+    }
+    console.error('Migration warning (drop category):', err.message);
   }
 }
 
