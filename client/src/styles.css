@@ -421,7 +421,7 @@ input, button, select, textarea {
 }
 
 .edit-icon {
-  opacity: 0;
+  opacity: 0.5;
   transition: opacity var(--transition);
   color: var(--gray-400);
 }
@@ -710,7 +710,7 @@ input, button, select, textarea {
 }
 
 .btn-looking-for {
-  opacity: 0;
+  opacity: 0.5;
   width: 28px;
   height: 28px;
   flex-shrink: 0;
@@ -733,7 +733,7 @@ input, button, select, textarea {
 }
 
 .btn-delete-item {
-  opacity: 0;
+  opacity: 0.5;
   width: 28px;
   height: 28px;
   flex-shrink: 0;
@@ -759,7 +759,7 @@ input, button, select, textarea {
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: var(--gray-300);
+  color: var(--gray-400);
   cursor: grab;
   flex-shrink: 0;
   transition: all var(--transition);
@@ -847,10 +847,12 @@ input, button, select, textarea {
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 100;
-  padding: 20px;
+  padding: 40px 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   animation: fadeIn 0.15s ease;
 }
 
@@ -865,6 +867,8 @@ input, button, select, textarea {
   box-shadow: var(--shadow-xl);
   max-width: 460px;
   width: 100%;
+  margin: auto 0;
+  flex-shrink: 0;
   animation: slideUp 0.2s ease;
 }
 
@@ -1086,11 +1090,4 @@ input, button, select, textarea {
     padding: 10px 12px;
   }
 
-  .btn-delete-item {
-    opacity: 0.6;
-  }
-
-  .drag-handle {
-    color: var(--gray-400);
-  }
 }
