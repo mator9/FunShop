@@ -7,7 +7,15 @@ let initPromise;
 async function getDb() {
   if (!initPromise) {
     initPromise = (async () => {
-      // Use Turso cloud database in production, local SQLite file for development
+      const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+      if (isProduction && (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN)) {
+        console.error(
+          'FATAL: TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set in production. ' +
+          'Without Turso the server would use ephemeral local SQLite and silently lose data on restart.'
+        );
+        process.exit(1);
+      }
+
       const url = process.env.TURSO_DATABASE_URL || `file:${path.join(__dirname, 'shopping_lists.db')}`;
       client = createClient({
         url,
@@ -217,6 +225,14 @@ async function getItemsByListId(listId) {
   return result.rows;
 }
 
+async function getItemCountByListId(listId) {
+  const result = await client.execute({
+    sql: 'SELECT COUNT(*) as count FROM items WHERE list_id = ?',
+    args: [listId],
+  });
+  return Number(result.rows[0]?.count ?? 0);
+}
+
 async function reorderItems(listId, itemIds) {
   // Update sort_order for each item based on its position in the array
   const statements = itemIds.map((itemId, index) => ({
@@ -283,6 +299,7 @@ module.exports = {
   addItem,
   getItemById,
   getItemsByListId,
+  getItemCountByListId,
   reorderItems,
   updateItem,
   deleteItem,

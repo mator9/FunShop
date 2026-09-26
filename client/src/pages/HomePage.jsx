@@ -99,7 +99,7 @@ export default function HomePage() {
                 placeholder="Enter share code"
                 value={shareCode}
                 onChange={(e) => setShareCode(e.target.value)}
-                maxLength={20}
+                maxLength={24}
               />
               <button type="submit" className="btn btn-secondary" disabled={joining || !shareCode.trim()}>
                 {joining ? 'Joining...' : 'Join List'}
